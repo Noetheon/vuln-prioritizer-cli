@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vuln-prioritizer"
+version = "0.1.0"
+description = "CLI for prioritizing known CVEs with NVD, EPSS, and CISA KEV context."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "OpenAI Codex" }]
+dependencies = [
+  "pydantic>=2.6,<3.0",
+  "python-dotenv>=1.0,<2.0",
+  "requests>=2.31,<3.0",
+  "rich>=13.7,<14.0",
+  "typer>=0.12,<1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0,<9.0"]
+
+[project.scripts]
+vuln-prioritizer = "vuln_prioritizer.cli:main"
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
