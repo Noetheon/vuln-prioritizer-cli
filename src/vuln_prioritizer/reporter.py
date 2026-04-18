@@ -319,7 +319,8 @@ def generate_compare_json(
 def write_output(path: Path, content: str) -> None:
     """Write report content to disk."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding="utf-8")
+    normalized_content = content if content.endswith("\n") else content + "\n"
+    path.write_text(normalized_content, encoding="utf-8")
 
 
 def render_explain_view(

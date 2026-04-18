@@ -11,6 +11,19 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 - Maintained local-first validation as the primary development path while keeping release metadata and CI aligned with the codebase.
 
+## [0.2.1] - 2026-04-18
+
+### Added
+
+- `make package` and `make release-check` for repeatable local release verification.
+- GitHub pull request and issue templates for public OSS maintenance.
+- Dedicated release notes document for the current patch release.
+
+### Changed
+
+- Regenerated demo artifacts after the final maintainer-facing release sweep.
+- Tightened contributor guidance around release-oriented local validation.
+
 ## [0.2.0] - 2026-04-18
 
 ### Added

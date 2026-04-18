@@ -86,6 +86,8 @@ Additional local helpers:
 make format
 make test
 make typecheck
+make package
+make release-check
 make demo-report
 make demo-compare
 make demo-explain
@@ -93,6 +95,14 @@ make precommit-install
 ```
 
 A slim GitHub Actions workflow is also included now, but the repository still treats local `make check` as the primary quality gate.
+
+For release candidates or public-release preparation, use:
+
+```bash
+make release-check
+```
+
+This runs the local quality gate, regenerates demo artifacts, and builds a wheel under `dist/`.
 
 ## Highlights
 

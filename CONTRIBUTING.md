@@ -42,6 +42,12 @@ make demo-compare
 make demo-explain
 ```
 
+For a full release-oriented local sweep:
+
+```bash
+make release-check
+```
+
 ## Commit Discipline
 
 - Keep commits focused.
