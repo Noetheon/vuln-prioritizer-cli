@@ -87,6 +87,7 @@ make format
 make test
 make typecheck
 make demo-report
+make demo-compare
 make demo-explain
 make precommit-install
 ```
@@ -112,6 +113,16 @@ make precommit-install
 
 ```bash
 vuln-prioritizer analyze --input data/sample_cves.txt
+```
+
+### Filter the Enriched Result Set
+
+```bash
+vuln-prioritizer analyze \
+  --input data/sample_cves.txt \
+  --priority high \
+  --min-epss 0.40 \
+  --sort-by epss
 ```
 
 ### Generate a Markdown Report
@@ -147,12 +158,26 @@ vuln-prioritizer analyze \
   --format json
 ```
 
+### Compare CVSS-only vs Enriched Prioritization
+
+```bash
+vuln-prioritizer compare \
+  --input data/sample_cves.txt \
+  --output docs/example_compare.md \
+  --format markdown
+```
+
 ### Important Options
 
 - `--input`: TXT or CSV file containing CVEs
 - `--output`: target file for Markdown or JSON output
 - `--format markdown|json|table`: output mode
 - `--no-attack`: explicitly disable ATT&CK context
+- `--priority critical|high|medium|low`: repeatable filter on the enriched priority label
+- `--kev-only`: keep only KEV-listed CVEs
+- `--min-cvss FLOAT`: keep only findings with CVSS greater than or equal to the threshold
+- `--min-epss FLOAT`: keep only findings with EPSS greater than or equal to the threshold
+- `--sort-by priority|epss|cvss|cve`: override display and export ordering
 - `--max-cves N`: limit analysis to the first `N` unique CVEs
 - `--offline-kev-file PATH`: use a local KEV JSON or CSV file
 - `--offline-attack-file PATH`: use a local ATT&CK mapping CSV file
@@ -185,6 +210,7 @@ CVE-2024-3094
 ## Example Output
 
 The CLI always prints a compact terminal table. A full sample report is checked in at [docs/example_report.md](docs/example_report.md).
+The comparison view is checked in at [docs/example_compare.md](docs/example_compare.md).
 For the detailed single-CVE mode, a sample export is available at [docs/example_explain.json](docs/example_explain.json).
 
 ## Priority Logic
@@ -197,6 +223,17 @@ The MVP rules are intentionally simple and easy to explain:
 - `Low`: everything else
 
 ATT&CK does not influence the priority class in the MVP. Optional ATT&CK context is only used to enrich the rationale.
+
+## Comparison Baseline
+
+The `compare` command uses a deterministic `CVSS-only` baseline with standard severity bands:
+
+- `Critical`: `CVSS >= 9.0`
+- `High`: `CVSS >= 7.0`
+- `Medium`: `CVSS >= 4.0`
+- `Low`: missing CVSS or everything below `4.0`
+
+The comparison output then shows whether the enriched model makes a CVE more urgent, less urgent, or leaves it unchanged.
 
 ## Tool Boundaries
 
@@ -241,23 +278,27 @@ The current quality workflow is local-first by design. If GitHub Actions are add
 
 ## Roadmap
 
-### MVP
+### Implemented
 
 - TXT and CSV input
 - NVD, EPSS, and KEV enrichment
-- fixed priority rules
-- terminal table output
-- Markdown and JSON output
-
-### V1.1
-
-- better CLI summaries
-- `CVSS-only vs enriched` comparison view
-- expanded filtering options
+- fixed enriched priority rules
+- richer run summaries with coverage and filter metadata
+- post-enrichment filters and sort overrides
+- `compare` command for `CVSS-only vs enriched`
+- terminal, Markdown, and JSON outputs
 
 ### V1.2
 
-- optional ATT&CK mapping via local file
+- configurable thresholds for alternate prioritization policies
+- stronger ATT&CK user flows based on local mapping files
+- more guided comparison presets for common demo scenarios
+
+### V1.3
+
+- richer `explain` comparisons against the baseline view
+- additional cache strategy improvements for repeated demo runs
+- release automation once public CI usage is available
 - configurable thresholds once there is a clean policy model
 
 ### V1.3

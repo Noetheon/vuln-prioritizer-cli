@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -14,11 +15,210 @@ from vuln_prioritizer.providers.nvd import NvdProvider
 runner = CliRunner()
 
 
-def test_cli_end_to_end_with_mocked_providers(monkeypatch, tmp_path: Path) -> None:
-    input_file = tmp_path / "cves.txt"
+def test_cli_analyze_end_to_end_with_mocked_providers(monkeypatch, tmp_path: Path) -> None:
+    input_file = _write_input_file(tmp_path)
     output_file = tmp_path / "report.md"
-    input_file.write_text("CVE-2021-44228\nCVE-2023-44487\n", encoding="utf-8")
+    _install_fake_providers(monkeypatch)
 
+    result = runner.invoke(
+        app,
+        [
+            "analyze",
+            "--input",
+            str(input_file),
+            "--output",
+            str(output_file),
+            "--format",
+            "markdown",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Vulnerability Prioritization" in result.stdout
+    assert "Total input rows: 4" in result.stdout
+    assert output_file.exists()
+    report = output_file.read_text(encoding="utf-8")
+    assert "# Vulnerability Prioritization Report" in report
+    assert "- Findings shown: 4" in report
+    assert "- NVD hits: 4/4" in report
+
+
+def test_cli_analyze_supports_priority_threshold_filters_and_sorting(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    input_file = _write_input_file(tmp_path)
+    output_file = tmp_path / "report.json"
+    _install_fake_providers(monkeypatch)
+
+    result = runner.invoke(
+        app,
+        [
+            "analyze",
+            "--input",
+            str(input_file),
+            "--output",
+            str(output_file),
+            "--format",
+            "json",
+            "--priority",
+            "high",
+            "--min-epss",
+            "0.40",
+            "--sort-by",
+            "cve",
+        ],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(output_file.read_text(encoding="utf-8"))
+
+    assert [item["cve_id"] for item in payload["findings"]] == [
+        "CVE-2023-44487",
+        "CVE-2024-3094",
+    ]
+    assert payload["metadata"]["filtered_out_count"] == 2
+    assert payload["metadata"]["active_filters"] == ["priority=High", "min-epss>=0.400"]
+
+
+def test_cli_analyze_supports_kev_only_and_min_cvss(monkeypatch, tmp_path: Path) -> None:
+    input_file = _write_input_file(tmp_path)
+    output_file = tmp_path / "filtered.json"
+    _install_fake_providers(monkeypatch)
+
+    result = runner.invoke(
+        app,
+        [
+            "analyze",
+            "--input",
+            str(input_file),
+            "--output",
+            str(output_file),
+            "--format",
+            "json",
+            "--kev-only",
+            "--min-cvss",
+            "7.0",
+        ],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(output_file.read_text(encoding="utf-8"))
+
+    assert [item["cve_id"] for item in payload["findings"]] == ["CVE-2021-44228"]
+    assert payload["metadata"]["active_filters"] == ["kev-only", "min-cvss>=7.0"]
+
+
+def test_cli_compare_table_mode(monkeypatch, tmp_path: Path) -> None:
+    input_file = _write_input_file(tmp_path)
+    _install_fake_providers(monkeypatch)
+
+    result = runner.invoke(
+        app,
+        [
+            "compare",
+            "--input",
+            str(input_file),
+            "--sort-by",
+            "cve",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "CVSS-only vs Enriched Prioritization" in result.stdout
+    assert "Up 1" in result.stdout
+    assert "Down 1" in result.stdout
+
+
+def test_cli_compare_json_export(monkeypatch, tmp_path: Path) -> None:
+    input_file = _write_input_file(tmp_path)
+    output_file = tmp_path / "compare.json"
+    _install_fake_providers(monkeypatch)
+
+    result = runner.invoke(
+        app,
+        [
+            "compare",
+            "--input",
+            str(input_file),
+            "--output",
+            str(output_file),
+            "--format",
+            "json",
+            "--priority",
+            "high",
+        ],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(output_file.read_text(encoding="utf-8"))
+
+    assert "comparisons" in payload
+    assert payload["metadata"]["active_filters"] == ["priority=High"]
+    assert any(item["changed"] for item in payload["comparisons"])
+
+
+def test_cli_compare_rejects_output_with_table_format(tmp_path: Path) -> None:
+    input_file = _write_input_file(tmp_path)
+
+    result = runner.invoke(
+        app,
+        [
+            "compare",
+            "--input",
+            str(input_file),
+            "--output",
+            str(tmp_path / "compare.txt"),
+            "--format",
+            "table",
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "--output cannot be used together with --format table." in result.stdout
+
+
+def test_cli_explain_end_to_end_with_mocked_providers(monkeypatch, tmp_path: Path) -> None:
+    output_file = tmp_path / "explain.json"
+    _install_fake_providers(monkeypatch)
+
+    result = runner.invoke(
+        app,
+        [
+            "explain",
+            "--cve",
+            "CVE-2021-44228",
+            "--output",
+            str(output_file),
+            "--format",
+            "json",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Explanation for CVE-2021-44228" in result.stdout
+    assert output_file.exists()
+    assert '"priority_label": "Critical"' in output_file.read_text(encoding="utf-8")
+
+
+def _write_input_file(tmp_path: Path) -> Path:
+    input_file = tmp_path / "cves.txt"
+    input_file.write_text(
+        "\n".join(
+            [
+                "CVE-2021-44228",
+                "CVE-2023-44487",
+                "CVE-2024-3094",
+                "CVE-2024-0004",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return input_file
+
+
+def _install_fake_providers(monkeypatch) -> None:  # noqa: ANN001
     def fake_nvd_fetch_many(self, cve_ids):  # noqa: ANN001
         return (
             {
@@ -32,6 +232,18 @@ def test_cli_end_to_end_with_mocked_providers(monkeypatch, tmp_path: Path) -> No
                     cve_id="CVE-2023-44487",
                     description="HTTP/2 Rapid Reset",
                     cvss_base_score=7.5,
+                    cvss_severity="HIGH",
+                ),
+                "CVE-2024-3094": NvdData(
+                    cve_id="CVE-2024-3094",
+                    description="XZ Utils backdoor",
+                    cvss_base_score=5.0,
+                    cvss_severity="MEDIUM",
+                ),
+                "CVE-2024-0004": NvdData(
+                    cve_id="CVE-2024-0004",
+                    description="Synthetic medium case",
+                    cvss_base_score=8.0,
                     cvss_severity="HIGH",
                 ),
             },
@@ -51,6 +263,16 @@ def test_cli_end_to_end_with_mocked_providers(monkeypatch, tmp_path: Path) -> No
                     epss=0.42,
                     percentile=0.91,
                 ),
+                "CVE-2024-3094": EpssData(
+                    cve_id="CVE-2024-3094",
+                    epss=0.45,
+                    percentile=0.88,
+                ),
+                "CVE-2024-0004": EpssData(
+                    cve_id="CVE-2024-0004",
+                    epss=0.05,
+                    percentile=0.12,
+                ),
             },
             [],
         )
@@ -60,6 +282,8 @@ def test_cli_end_to_end_with_mocked_providers(monkeypatch, tmp_path: Path) -> No
             {
                 "CVE-2021-44228": KevData(cve_id="CVE-2021-44228", in_kev=True),
                 "CVE-2023-44487": KevData(cve_id="CVE-2023-44487", in_kev=False),
+                "CVE-2024-3094": KevData(cve_id="CVE-2024-3094", in_kev=False),
+                "CVE-2024-0004": KevData(cve_id="CVE-2024-0004", in_kev=False),
             },
             [],
         )
@@ -80,111 +304,3 @@ def test_cli_end_to_end_with_mocked_providers(monkeypatch, tmp_path: Path) -> No
     monkeypatch.setattr(EpssProvider, "fetch_many", fake_epss_fetch_many)
     monkeypatch.setattr(KevProvider, "fetch_many", fake_kev_fetch_many)
     monkeypatch.setattr(AttackProvider, "fetch_many", fake_attack_fetch_many)
-
-    result = runner.invoke(
-        app,
-        [
-            "analyze",
-            "--input",
-            str(input_file),
-            "--output",
-            str(output_file),
-            "--format",
-            "markdown",
-        ],
-    )
-
-    assert result.exit_code == 0
-    assert "CVE-2021-44228" in result.stdout
-    assert output_file.exists()
-    assert "# Vulnerability Prioritization Report" in output_file.read_text(encoding="utf-8")
-
-
-def test_cli_rejects_output_with_table_format(tmp_path: Path) -> None:
-    input_file = tmp_path / "cves.txt"
-    input_file.write_text("CVE-2021-44228\n", encoding="utf-8")
-
-    result = runner.invoke(
-        app,
-        [
-            "analyze",
-            "--input",
-            str(input_file),
-            "--output",
-            str(tmp_path / "report.txt"),
-            "--format",
-            "table",
-        ],
-    )
-
-    assert result.exit_code == 2
-    assert "--output cannot be used together with --format table." in result.stdout
-
-
-def test_cli_explain_end_to_end_with_mocked_providers(monkeypatch, tmp_path: Path) -> None:
-    output_file = tmp_path / "explain.json"
-
-    def fake_nvd_fetch_many(self, cve_ids):  # noqa: ANN001
-        return (
-            {
-                "CVE-2021-44228": NvdData(
-                    cve_id="CVE-2021-44228",
-                    description="Log4Shell",
-                    cvss_base_score=10.0,
-                    cvss_severity="CRITICAL",
-                    published="2021-12-10T10:15:09.143",
-                )
-            },
-            [],
-        )
-
-    def fake_epss_fetch_many(self, cve_ids):  # noqa: ANN001
-        return (
-            {
-                "CVE-2021-44228": EpssData(
-                    cve_id="CVE-2021-44228",
-                    epss=0.97,
-                    percentile=0.999,
-                )
-            },
-            [],
-        )
-
-    def fake_kev_fetch_many(self, cve_ids, offline_file=None):  # noqa: ANN001
-        return (
-            {
-                "CVE-2021-44228": KevData(
-                    cve_id="CVE-2021-44228",
-                    in_kev=True,
-                    vendor_project="Apache",
-                    product="Log4j",
-                )
-            },
-            [],
-        )
-
-    def fake_attack_fetch_many(self, cve_ids, enabled, offline_file=None):  # noqa: ANN001
-        return ({}, [])
-
-    monkeypatch.setattr(NvdProvider, "fetch_many", fake_nvd_fetch_many)
-    monkeypatch.setattr(EpssProvider, "fetch_many", fake_epss_fetch_many)
-    monkeypatch.setattr(KevProvider, "fetch_many", fake_kev_fetch_many)
-    monkeypatch.setattr(AttackProvider, "fetch_many", fake_attack_fetch_many)
-
-    result = runner.invoke(
-        app,
-        [
-            "explain",
-            "--cve",
-            "CVE-2021-44228",
-            "--output",
-            str(output_file),
-            "--format",
-            "json",
-        ],
-    )
-
-    assert result.exit_code == 0
-    assert "Explanation for CVE-2021-44228" in result.stdout
-    assert output_file.exists()
-    assert '"priority_label": "Critical"' in output_file.read_text(encoding="utf-8")

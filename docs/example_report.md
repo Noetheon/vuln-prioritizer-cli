@@ -1,7 +1,7 @@
 # Vulnerability Prioritization Report
 
 ## Run Metadata
-- Generated at: `2026-04-18T14:50:04+00:00`
+- Generated at: `2026-04-18T15:14:14+00:00`
 - Input file: `data/sample_cves.txt`
 - Output format: `markdown`
 - ATT&CK context enabled: `no`
@@ -20,11 +20,16 @@
 ## Summary
 - Total input rows: 4
 - Valid unique CVEs: 4
-- Findings generated: 4
+- Findings shown: 4
+- Filtered out: 0
+- NVD hits: 4/4
+- EPSS hits: 4/4
+- KEV hits: 3/4
 - Critical: 4
 - High: 0
 - Medium: 0
 - Low: 0
+- Active filters: None
 
 ## Warnings
 - None

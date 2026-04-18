@@ -48,6 +48,27 @@ Input is normalized, validated, and deduplicated. Invalid lines do not immediate
 - `Medium`: `CVSS >= 7.0` or `EPSS >= 0.10`
 - `Low`: everything else
 
+## Filtering
+
+Filters are applied only after enrichment and priority calculation.
+
+- `--priority` matches the enriched priority label
+- `--kev-only` keeps KEV-listed findings only
+- `--min-cvss` and `--min-epss` exclude findings with missing values
+- `--sort-by` changes display order, not the computed priority rank
+
+## Comparison Mode
+
+The `compare` command evaluates the same enriched findings against a deterministic `CVSS-only` baseline:
+
+- `Critical`: `CVSS >= 9.0`
+- `High`: `CVSS >= 7.0`
+- `Medium`: `CVSS >= 4.0`
+- `Low`: missing CVSS or everything below `4.0`
+
+`delta_rank` is calculated as `cvss_only_rank - enriched_rank`.
+Positive values mean the enriched model treats the CVE as more urgent than the baseline. Negative values mean the enriched model lowers the operational urgency.
+
 ## Sorting
 
 Results are sorted by:
@@ -57,6 +78,8 @@ Results are sorted by:
 3. EPSS descending
 4. CVSS descending
 5. CVE ID
+
+With `--sort-by`, users can temporarily switch the output order to EPSS, CVSS, or CVE ID while keeping the same underlying priority calculation.
 
 ## Error Handling
 

@@ -35,6 +35,7 @@
     "vendor_project": "Apache"
   },
   "metadata": {
+    "active_filters": [],
     "attack_enabled": false,
     "cache_dir": ".cache/vuln-prioritizer",
     "cache_enabled": true,
@@ -46,9 +47,13 @@
       "FIRST EPSS API",
       "CISA Known Exploited Vulnerabilities Catalog"
     ],
+    "epss_hits": 1,
+    "filtered_out_count": 0,
     "findings_count": 1,
-    "generated_at": "2026-04-18T14:50:04+00:00",
+    "generated_at": "2026-04-18T15:14:14+00:00",
     "input_path": "inline:CVE-2021-44228",
+    "kev_hits": 1,
+    "nvd_hits": 1,
     "output_format": "json",
     "output_path": "docs/example_explain.json",
     "total_input": 1,

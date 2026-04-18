@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from vuln_prioritizer.models import AnalysisContext, PrioritizedFinding
-from vuln_prioritizer.reporter import generate_markdown_report, write_output
+from vuln_prioritizer.models import AnalysisContext, ComparisonFinding, PrioritizedFinding
+from vuln_prioritizer.reporter import (
+    generate_compare_markdown,
+    generate_markdown_report,
+    write_output,
+)
 
 
-def test_markdown_report_contains_headers_and_na(tmp_path: Path) -> None:
+def test_markdown_report_contains_headers_summary_metadata_and_na(tmp_path: Path) -> None:
     finding = PrioritizedFinding(
         cve_id="CVE-2024-0001",
         description=None,
@@ -28,9 +32,14 @@ def test_markdown_report_contains_headers_and_na(tmp_path: Path) -> None:
         generated_at="2026-04-18T00:00:00+00:00",
         attack_enabled=False,
         warnings=[],
-        total_input=1,
+        total_input=2,
         valid_input=1,
         findings_count=1,
+        filtered_out_count=0,
+        nvd_hits=0,
+        epss_hits=0,
+        kev_hits=0,
+        active_filters=["kev-only"],
         counts_by_priority={"Low": 1},
         data_sources=["NVD", "EPSS", "KEV"],
     )
@@ -39,9 +48,78 @@ def test_markdown_report_contains_headers_and_na(tmp_path: Path) -> None:
 
     assert "# Vulnerability Prioritization Report" in report
     assert "## Findings" in report
+    assert "- Findings shown: 1" in report
+    assert "- Filtered out: 0" in report
+    assert "- Active filters: kev-only" in report
     assert "| CVE ID | Description | CVSS | Severity | EPSS |" in report
     assert "N.A." in report
 
     output_file = tmp_path / "report.md"
     write_output(output_file, report)
     assert output_file.read_text(encoding="utf-8") == report
+
+
+def test_compare_markdown_report_contains_changed_and_unchanged_rows() -> None:
+    comparisons = [
+        ComparisonFinding(
+            cve_id="CVE-2024-0001",
+            description="KEV upgrade",
+            cvss_base_score=5.0,
+            cvss_severity="MEDIUM",
+            epss=0.05,
+            epss_percentile=0.2,
+            in_kev=True,
+            cvss_only_label="Medium",
+            cvss_only_rank=3,
+            enriched_label="Critical",
+            enriched_rank=1,
+            changed=True,
+            delta_rank=2,
+            change_reason=(
+                "KEV membership raises this CVE from the CVSS-only Medium baseline to Critical."
+            ),
+        ),
+        ComparisonFinding(
+            cve_id="CVE-2024-0002",
+            description="No change",
+            cvss_base_score=3.5,
+            cvss_severity="LOW",
+            epss=None,
+            epss_percentile=None,
+            in_kev=False,
+            cvss_only_label="Low",
+            cvss_only_rank=4,
+            enriched_label="Low",
+            enriched_rank=4,
+            changed=False,
+            delta_rank=0,
+            change_reason="CVSS alone already yields Low, and EPSS/KEV do not change the result.",
+        ),
+    ]
+    context = AnalysisContext(
+        input_path="data/sample_cves.txt",
+        output_path="compare.md",
+        output_format="markdown",
+        generated_at="2026-04-18T00:00:00+00:00",
+        attack_enabled=False,
+        warnings=[],
+        total_input=2,
+        valid_input=2,
+        findings_count=2,
+        filtered_out_count=0,
+        nvd_hits=2,
+        epss_hits=1,
+        kev_hits=1,
+        active_filters=[],
+        counts_by_priority={"Critical": 1, "Low": 1},
+        data_sources=["NVD", "EPSS", "KEV"],
+    )
+
+    report = generate_compare_markdown(comparisons, context)
+
+    assert "# Vulnerability Priority Comparison Report" in report
+    assert "- Changed rows: 1" in report
+    assert "- Unchanged rows: 1" in report
+    assert "| CVE ID | Description | CVSS-only | Enriched | Delta | Changed |" in report
+    assert "KEV membership raises this CVE" in report
+    assert "| CVE-2024-0002 | No change | Low | Low | No change | No |" in report

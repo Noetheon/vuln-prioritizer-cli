@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from vuln_prioritizer.config import PRIORITY_RANKS, PRIORITY_RECOMMENDATIONS
-from vuln_prioritizer.models import AttackData, EpssData, KevData, NvdData
+from vuln_prioritizer.models import AttackData, EpssData, KevData, NvdData, PrioritizedFinding
 
 
 def determine_priority(nvd: NvdData, epss: EpssData, kev: KevData) -> tuple[str, int]:
@@ -18,6 +18,20 @@ def determine_priority(nvd: NvdData, epss: EpssData, kev: KevData) -> tuple[str,
     elif (epss_score is not None and epss_score >= 0.40) or (cvss is not None and cvss >= 9.0):
         label = "High"
     elif (cvss is not None and cvss >= 7.0) or (epss_score is not None and epss_score >= 0.10):
+        label = "Medium"
+    else:
+        label = "Low"
+
+    return label, PRIORITY_RANKS[label]
+
+
+def determine_cvss_only_priority(cvss_base_score: float | None) -> tuple[str, int]:
+    """Apply the comparison baseline that only uses CVSS severity bands."""
+    if cvss_base_score is not None and cvss_base_score >= 9.0:
+        label = "Critical"
+    elif cvss_base_score is not None and cvss_base_score >= 7.0:
+        label = "High"
+    elif cvss_base_score is not None and cvss_base_score >= 4.0:
         label = "Medium"
     else:
         label = "Low"
@@ -57,6 +71,53 @@ def build_rationale(
         )
 
     return " ".join(parts)
+
+
+def build_comparison_reason(
+    finding: PrioritizedFinding,
+    *,
+    cvss_only_label: str,
+    cvss_only_rank: int,
+) -> str:
+    """Explain why the enriched result differs from or matches the CVSS-only baseline."""
+    if finding.priority_rank < cvss_only_rank:
+        if finding.in_kev:
+            return (
+                f"KEV membership raises this CVE from the CVSS-only {cvss_only_label} baseline "
+                f"to {finding.priority_label}."
+            )
+        if finding.epss is not None:
+            return (
+                f"EPSS {finding.epss:.3f} raises this CVE from the CVSS-only "
+                f"{cvss_only_label} baseline to {finding.priority_label}."
+            )
+        return (
+            f"Additional enrichment raises this CVE from the CVSS-only {cvss_only_label} "
+            f"baseline to {finding.priority_label}."
+        )
+
+    if finding.priority_rank > cvss_only_rank:
+        return (
+            f"CVSS alone would rate this CVE as {cvss_only_label}, but the enriched model "
+            f"lowers it to {finding.priority_label} because KEV is absent and EPSS stays below "
+            "the escalation thresholds."
+        )
+
+    if finding.cvss_base_score is None and finding.epss is None and not finding.in_kev:
+        return "Missing CVSS and EPSS data leave both baseline and enriched views at Low."
+
+    if finding.cvss_base_score is None:
+        return (
+            f"Missing CVSS keeps the baseline at {cvss_only_label}, and the available "
+            "enrichment signals do not change the result."
+        )
+
+    if not finding.in_kev and (finding.epss is None or finding.epss < 0.10):
+        return (
+            f"CVSS alone already yields {cvss_only_label}, and EPSS/KEV do not change the result."
+        )
+
+    return f"CVSS and enrichment both support the same {finding.priority_label} outcome."
 
 
 def recommended_action(priority_label: str) -> str:

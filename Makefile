@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: install test lint format typecheck check demo-report demo-explain precommit-install
+.PHONY: install test lint format typecheck check demo-report demo-compare demo-explain precommit-install
 
 install:
 	$(PYTHON) -m pip install -e .[dev]
@@ -25,6 +25,9 @@ check:
 
 demo-report:
 	PYTHONPATH=src $(PYTHON) -m vuln_prioritizer.cli analyze --input data/sample_cves.txt --output docs/example_report.md --format markdown
+
+demo-compare:
+	PYTHONPATH=src $(PYTHON) -m vuln_prioritizer.cli compare --input data/sample_cves.txt --output docs/example_compare.md --format markdown
 
 demo-explain:
 	PYTHONPATH=src $(PYTHON) -m vuln_prioritizer.cli explain --cve CVE-2021-44228 --output docs/example_explain.json --format json

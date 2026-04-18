@@ -12,6 +12,7 @@ from rich.table import Table
 from vuln_prioritizer.models import (
     AnalysisContext,
     AttackData,
+    ComparisonFinding,
     EpssData,
     KevData,
     NvdData,
@@ -40,6 +41,68 @@ def render_findings_table(findings: list[PrioritizedFinding]) -> Table:
         )
 
     return table
+
+
+def render_compare_table(comparisons: list[ComparisonFinding]) -> Table:
+    """Build the Rich comparison table shown in the terminal."""
+    table = Table(title="CVSS-only vs Enriched Prioritization", show_lines=False)
+    table.add_column("CVE", style="bold")
+    table.add_column("CVSS-only")
+    table.add_column("Enriched")
+    table.add_column("Change")
+    table.add_column("CVSS")
+    table.add_column("EPSS")
+    table.add_column("KEV")
+    table.add_column("Reason", overflow="fold")
+
+    for row in comparisons:
+        table.add_row(
+            row.cve_id,
+            row.cvss_only_label,
+            row.enriched_label,
+            format_change(row.delta_rank),
+            format_score(row.cvss_base_score, digits=1),
+            format_score(row.epss, digits=3),
+            "Yes" if row.in_kev else "No",
+            truncate_text(row.change_reason, 110),
+        )
+
+    return table
+
+
+def render_summary_panel(
+    context: AnalysisContext,
+    *,
+    mode: str = "analyze",
+    changed_count: int | None = None,
+) -> Panel:
+    """Render the shared terminal summary panel."""
+    lines = [
+        f"Total input rows: {context.total_input}",
+        f"Valid unique CVEs: {context.valid_input}",
+        f"Findings shown: {context.findings_count}",
+        f"Filtered out: {context.filtered_out_count}",
+        f"NVD hits: {context.nvd_hits}/{context.valid_input}",
+        f"EPSS hits: {context.epss_hits}/{context.valid_input}",
+        f"KEV hits: {context.kev_hits}/{context.valid_input}",
+    ]
+
+    if mode == "compare" and changed_count is not None:
+        unchanged_count = max(context.findings_count - changed_count, 0)
+        lines.extend(
+            [
+                f"Changed rows: {changed_count}",
+                f"Unchanged rows: {unchanged_count}",
+            ]
+        )
+
+    for label in ("Critical", "High", "Medium", "Low"):
+        lines.append(f"{label}: {context.counts_by_priority.get(label, 0)}")
+
+    if context.active_filters:
+        lines.append("Active filters: " + ", ".join(context.active_filters))
+
+    return Panel("\n".join(lines), title="Summary")
 
 
 def generate_markdown_report(
@@ -72,11 +135,17 @@ def generate_markdown_report(
             "## Summary",
             f"- Total input rows: {context.total_input}",
             f"- Valid unique CVEs: {context.valid_input}",
-            f"- Findings generated: {context.findings_count}",
+            f"- Findings shown: {context.findings_count}",
+            f"- Filtered out: {context.filtered_out_count}",
+            f"- NVD hits: {context.nvd_hits}/{context.valid_input}",
+            f"- EPSS hits: {context.epss_hits}/{context.valid_input}",
+            f"- KEV hits: {context.kev_hits}/{context.valid_input}",
         ]
     )
     for label in ("Critical", "High", "Medium", "Low"):
         summary_lines.append(f"- {label}: {context.counts_by_priority.get(label, 0)}")
+
+    summary_lines.extend(["- Active filters: " + format_filters(context.active_filters)])
 
     summary_lines.extend(["", "## Warnings"])
     if context.warnings:
@@ -127,6 +196,101 @@ def generate_json_report(
     payload = {
         "metadata": context.model_dump(),
         "findings": [finding.model_dump() for finding in findings],
+    }
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
+def generate_compare_markdown(
+    comparisons: list[ComparisonFinding],
+    context: AnalysisContext,
+) -> str:
+    """Render the Markdown comparison report."""
+    changed_count = sum(1 for row in comparisons if row.changed)
+    lines = [
+        "# Vulnerability Priority Comparison Report",
+        "",
+        "## Run Metadata",
+        f"- Generated at: `{context.generated_at}`",
+        f"- Input file: `{context.input_path}`",
+        f"- Output format: `{context.output_format}`",
+        f"- ATT&CK context enabled: `{'yes' if context.attack_enabled else 'no'}`",
+        "",
+        "## Baselines",
+        "- CVSS-only: Critical >= 9.0, High >= 7.0, Medium >= 4.0, Low otherwise",
+        "- Enriched: KEV or (EPSS >= 0.70 and CVSS >= 7.0) => Critical; "
+        "EPSS >= 0.40 or CVSS >= 9.0 => High; CVSS >= 7.0 or EPSS >= 0.10 => Medium",
+        "",
+        "## Data Sources",
+    ]
+    lines.extend(f"- {source}" for source in context.data_sources)
+    lines.extend(
+        [
+            "",
+            "## Summary",
+            f"- Total input rows: {context.total_input}",
+            f"- Valid unique CVEs: {context.valid_input}",
+            f"- Findings shown: {context.findings_count}",
+            f"- Filtered out: {context.filtered_out_count}",
+            f"- Changed rows: {changed_count}",
+            f"- Unchanged rows: {max(context.findings_count - changed_count, 0)}",
+            f"- NVD hits: {context.nvd_hits}/{context.valid_input}",
+            f"- EPSS hits: {context.epss_hits}/{context.valid_input}",
+            f"- KEV hits: {context.kev_hits}/{context.valid_input}",
+            f"- Active filters: {format_filters(context.active_filters)}",
+        ]
+    )
+
+    for label in ("Critical", "High", "Medium", "Low"):
+        lines.append(f"- Enriched {label}: {context.counts_by_priority.get(label, 0)}")
+
+    lines.extend(["", "## Warnings"])
+    if context.warnings:
+        lines.extend(f"- {warning}" for warning in context.warnings)
+    else:
+        lines.append("- None")
+
+    lines.extend(
+        [
+            "",
+            "## Comparison",
+            "",
+            "| CVE ID | Description | CVSS-only | Enriched | Delta | Changed | CVSS | EPSS "
+            "| KEV | Reason |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        ]
+    )
+
+    for row in comparisons:
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    row.cve_id,
+                    escape_pipes(row.description or "N.A."),
+                    row.cvss_only_label,
+                    row.enriched_label,
+                    escape_pipes(format_change(row.delta_rank)),
+                    "Yes" if row.changed else "No",
+                    format_score(row.cvss_base_score, digits=1),
+                    format_score(row.epss, digits=3),
+                    "Yes" if row.in_kev else "No",
+                    escape_pipes(row.change_reason),
+                ]
+            )
+            + " |"
+        )
+
+    return "\n".join(lines) + "\n"
+
+
+def generate_compare_json(
+    comparisons: list[ComparisonFinding],
+    context: AnalysisContext,
+) -> str:
+    """Render the JSON comparison export."""
+    payload = {
+        "metadata": context.model_dump(),
+        "comparisons": [row.model_dump() for row in comparisons],
     }
     return json.dumps(payload, indent=2, sort_keys=True)
 
@@ -272,6 +436,15 @@ def format_score(value: float | None, digits: int) -> str:
     return f"{value:.{digits}f}"
 
 
+def format_change(delta_rank: int) -> str:
+    """Render the comparison delta for terminal and Markdown output."""
+    if delta_rank > 0:
+        return f"Up {delta_rank}"
+    if delta_rank < 0:
+        return f"Down {abs(delta_rank)}"
+    return "No change"
+
+
 def truncate_text(value: str, limit: int) -> str:
     """Keep long descriptions compact in the terminal view."""
     value = normalize_whitespace(value)
@@ -293,3 +466,8 @@ def normalize_whitespace(value: str) -> str:
 def comma_or_na(values: list[str]) -> str:
     """Render lists consistently."""
     return ", ".join(values) if values else "N.A."
+
+
+def format_filters(active_filters: list[str]) -> str:
+    """Render filters consistently across Markdown and terminal output."""
+    return ", ".join(active_filters) if active_filters else "None"

@@ -65,6 +65,23 @@ class PrioritizedFinding(StrictModel):
     recommended_action: str
 
 
+class ComparisonFinding(StrictModel):
+    cve_id: str
+    description: str | None = None
+    cvss_base_score: float | None = None
+    cvss_severity: str | None = None
+    epss: float | None = None
+    epss_percentile: float | None = None
+    in_kev: bool = False
+    cvss_only_label: str
+    cvss_only_rank: int
+    enriched_label: str
+    enriched_rank: int
+    changed: bool
+    delta_rank: int
+    change_reason: str
+
+
 class EnrichmentResult(BaseModel):
     nvd: dict[str, NvdData] = Field(default_factory=dict)
     epss: dict[str, EpssData] = Field(default_factory=dict)
@@ -83,6 +100,11 @@ class AnalysisContext(BaseModel):
     total_input: int = 0
     valid_input: int = 0
     findings_count: int = 0
+    filtered_out_count: int = 0
+    nvd_hits: int = 0
+    epss_hits: int = 0
+    kev_hits: int = 0
+    active_filters: list[str] = Field(default_factory=list)
     counts_by_priority: dict[str, int] = Field(default_factory=dict)
     data_sources: list[str] = Field(default_factory=list)
     cache_enabled: bool = False
