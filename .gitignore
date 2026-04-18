@@ -2,6 +2,10 @@
 .DS_Store
 Thumbs.db
 
+# Local handoff notes kept outside version control
+Applied_Security_Project_Python_CLI_Notion_Pack.md
+Codex_Handoff_Vuln_Prioritizer.md
+
 # Environment and secrets
 .env
 .env.*
