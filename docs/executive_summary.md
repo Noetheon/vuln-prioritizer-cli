@@ -2,26 +2,26 @@
 
 ## Problem
 
-Security-Teams muessen haeufig mehr bekannte Schwachstellen bewerten, als kurzfristig behoben werden koennen. Eine reine CVSS-Priorisierung bildet operative Relevanz nur unvollstaendig ab.
+Security teams often need to assess more known vulnerabilities than they can remediate immediately. A CVSS-only prioritization model does not fully reflect operational urgency.
 
-## Massnahme
+## Approach
 
-`vuln-prioritizer` kombiniert:
+`vuln-prioritizer` combines:
 
-- technische Schwere aus NVD/CVSS
-- Ausnutzungswahrscheinlichkeit aus FIRST EPSS
-- real beobachtete Ausnutzung aus CISA KEV
+- technical severity from NVD/CVSS
+- likely exploitation from FIRST EPSS
+- observed real-world exploitation from CISA KEV
 
-## Nutzen
+## Benefit
 
-- bessere Entscheidungsgrundlage fuer Patch- und Mitigationsreihenfolgen
-- transparente, dokumentierte Priorisierungsregeln
-- gut erklaerbarer Transfer in Management- und CISO-Kommunikation
+- better remediation sequencing for patching and mitigation
+- transparent, documented prioritization rules
+- a clear bridge between technical findings and management-facing communication
 
-## Ergebnisform
+## Output
 
-Das Tool liefert:
+The tool provides:
 
-- eine priorisierte Terminal-Tabelle fuer den operativen Einsatz
-- einen Markdown-Report fuer Doku, Evidence und Management-Kommunikation
-- optional JSON fuer spaetere Weiterverarbeitung
+- a prioritized terminal table for operational use
+- a Markdown report for documentation and reporting
+- optional JSON output for future integrations or downstream processing

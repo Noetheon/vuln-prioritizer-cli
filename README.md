@@ -1,27 +1,27 @@
 # vuln-prioritizer
 
-`vuln-prioritizer` ist ein kleines Python-CLI zur Priorisierung bereits bekannter Schwachstellen. Das Tool liest CVE-Listen ein, reichert sie mit NVD-, EPSS- und KEV-Daten an und erzeugt daraus eine nachvollziehbare Priorisierung fuer den operativen Einsatz.
+`vuln-prioritizer` is a small Python CLI for prioritizing known vulnerabilities. It reads CVE lists, enriches them with NVD, EPSS, and CISA KEV data, and produces a transparent ranking for operational remediation decisions.
 
-## Projektidee
+## Project Idea
 
-Viele Teams priorisieren Schwachstellen immer noch hauptsaechlich ueber CVSS. Das greift operativ oft zu kurz:
+Many teams still prioritize vulnerabilities primarily by CVSS. That is useful, but often incomplete for day-to-day decision-making:
 
-- CVSS beschreibt technische Schwere, aber nicht aktuelle Ausnutzungswahrscheinlichkeit.
-- EPSS liefert eine datengetriebene Ausnutzungswahrscheinlichkeit fuer die naechsten 30 Tage.
-- KEV zeigt, ob eine Schwachstelle bereits real ausgenutzt wird.
+- CVSS captures technical severity, but not current exploitation likelihood.
+- EPSS provides a data-driven estimate of likely exploitation within the next 30 days.
+- KEV indicates whether a vulnerability is already known to be exploited in the wild.
 
-Das CLI kombiniert diese Signale zu einem transparenten Ranking fuer Patch-, Mitigations- und Monitoring-Entscheidungen.
+This CLI combines those signals into a transparent ranking for patching, mitigation, and monitoring decisions.
 
 ## Motivation
 
-Das Projekt ist als sichtbares Sicherheitsartefakt fuer ein Hochschulmodul konzipiert:
+The project is intentionally small, readable, and demo-friendly:
 
-- lauffaehiges CLI als Hauptartefakt
-- nachvollziehbare Methodik
-- technische Tiefe durch API-Integration, Parsing und Testabdeckung
-- Management- bzw. CISO-Perspektive durch priorisierte Handlungsempfehlungen
+- a working CLI as the primary artifact
+- transparent methodology
+- technical depth through API integrations, parsing, caching, and tests
+- clear security and management value through prioritized remediation guidance
 
-## Datenquellen
+## Data Sources
 
 - NVD CVE API 2.0: `https://services.nvd.nist.gov/rest/json/cves/2.0`
 - NVD API 2.0 Transition Guide: `https://nvd.nist.gov/general/news/api-20-announcements`
@@ -29,13 +29,13 @@ Das Projekt ist als sichtbares Sicherheitsartefakt fuer ein Hochschulmodul konzi
 - CISA KEV Catalog: `https://www.cisa.gov/known-exploited-vulnerabilities-catalog`
 - CISA KEV Mirror: `https://github.com/cisagov/kev-data`
 
-Optionales ATT&CK-Mapping ist bewusst nicht Teil des MVP. Falls genutzt, dann nur mit einer lokalen Mapping-CSV.
+Optional ATT&CK mapping is intentionally outside the MVP. If used, it should only come from a local mapping CSV.
 
 ## Installation
 
-### Voraussetzungen
+### Requirements
 
-- Python 3.11 oder 3.12
+- Python 3.11 or 3.12
 
 ### Setup
 
@@ -46,24 +46,24 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-Optional kann ein NVD-API-Key per `.env` gesetzt werden:
+Optionally configure an NVD API key via `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-Danach `NVD_API_KEY` in `.env` eintragen.
+Then set `NVD_API_KEY` in `.env`.
 
-## Entwicklung
+## Development
 
-Dieses Repository ist aktuell bewusst auf **lokale Quality-Gates** ausgelegt. Wenn GitHub Actions gerade nicht verfuegbar sind, kannst du die wichtigsten Checks komplett lokal ausfuehren:
+This repository currently uses **local quality gates** by design. If GitHub Actions are unavailable or intentionally disabled, you can still run the full development workflow locally:
 
 ```bash
 make install
 make check
 ```
 
-Weitere lokale Helfer:
+Additional local helpers:
 
 ```bash
 make format
@@ -74,21 +74,21 @@ make demo-explain
 make precommit-install
 ```
 
-Mit installiertem `pre-commit` kannst du automatische lokale Hooks aktivieren:
+To enable automatic local hooks with `pre-commit`:
 
 ```bash
 make precommit-install
 ```
 
-## Nutzung
+## Usage
 
-### Basislauf
+### Basic Run
 
 ```bash
 vuln-prioritizer analyze --input data/sample_cves.txt
 ```
 
-### Markdown-Report erzeugen
+### Generate a Markdown Report
 
 ```bash
 vuln-prioritizer analyze \
@@ -97,13 +97,13 @@ vuln-prioritizer analyze \
   --format markdown
 ```
 
-### Einzelne CVE erklaeren
+### Explain a Single CVE
 
 ```bash
 vuln-prioritizer explain --cve CVE-2021-44228
 ```
 
-### Einzelne CVE als JSON exportieren
+### Export a Single CVE Explanation as JSON
 
 ```bash
 vuln-prioritizer explain \
@@ -112,7 +112,7 @@ vuln-prioritizer explain \
   --format json
 ```
 
-### JSON-Export erzeugen
+### Generate a JSON Export
 
 ```bash
 vuln-prioritizer analyze \
@@ -121,21 +121,21 @@ vuln-prioritizer analyze \
   --format json
 ```
 
-### Wichtige Optionen
+### Important Options
 
-- `--input`: TXT- oder CSV-Datei mit CVEs
-- `--output`: Zieldatei fuer Markdown- oder JSON-Ausgabe
-- `--format markdown|json|table`: Ausgabemodus
-- `--no-attack`: ATT&CK-Kontext explizit deaktivieren
-- `--max-cves N`: Analyse nach `N` eindeutigen CVEs abschneiden
-- `--offline-kev-file PATH`: lokale KEV-JSON- oder CSV-Datei nutzen
-- `--offline-attack-file PATH`: lokale ATT&CK-Mapping-CSV nutzen
-- `--nvd-api-key-env NAME`: alternativen Umgebungsvariablennamen fuer den NVD-Key setzen
-- `--no-cache`: Dateicache deaktivieren
-- `--cache-dir PATH`: alternatives Cache-Verzeichnis setzen
-- `--cache-ttl-hours N`: Cache-TTL in Stunden setzen
+- `--input`: TXT or CSV file containing CVEs
+- `--output`: target file for Markdown or JSON output
+- `--format markdown|json|table`: output mode
+- `--no-attack`: explicitly disable ATT&CK context
+- `--max-cves N`: limit analysis to the first `N` unique CVEs
+- `--offline-kev-file PATH`: use a local KEV JSON or CSV file
+- `--offline-attack-file PATH`: use a local ATT&CK mapping CSV file
+- `--nvd-api-key-env NAME`: use a custom environment variable name for the NVD API key
+- `--no-cache`: disable the local file cache
+- `--cache-dir PATH`: set a custom cache directory
+- `--cache-ttl-hours N`: set the cache TTL in hours
 
-## Beispielinput
+## Example Input
 
 TXT:
 
@@ -156,33 +156,33 @@ CVE-2023-44487
 CVE-2024-3094
 ```
 
-## Beispieloutput
+## Example Output
 
-Der Terminal-Output zeigt immer eine kompakte Tabelle. Ein vollstaendiger Beispielreport wird unter [docs/example_report.md](docs/example_report.md) abgelegt.
-Fuer den neuen Detailmodus liegt ein Beispiel-Export unter [docs/example_explain.json](docs/example_explain.json).
+The CLI always prints a compact terminal table. A full sample report is checked in at [docs/example_report.md](docs/example_report.md).
+For the detailed single-CVE mode, a sample export is available at [docs/example_explain.json](docs/example_explain.json).
 
-## Priorisierungslogik
+## Priority Logic
 
-Die MVP-Regeln sind absichtlich einfach und dokumentierbar:
+The MVP rules are intentionally simple and easy to explain:
 
-- `Critical`: KEV oder `(EPSS >= 0.70 und CVSS >= 7.0)`
-- `High`: `EPSS >= 0.40` oder `CVSS >= 9.0`
-- `Medium`: `CVSS >= 7.0` oder `EPSS >= 0.10`
-- `Low`: alles andere
+- `Critical`: KEV or `(EPSS >= 0.70 and CVSS >= 7.0)`
+- `High`: `EPSS >= 0.40` or `CVSS >= 9.0`
+- `Medium`: `CVSS >= 7.0` or `EPSS >= 0.10`
+- `Low`: everything else
 
-ATT&CK beeinflusst im MVP nicht die Prioritaetsklasse. Optionaler ATT&CK-Kontext wird nur zur Ergaenzung der Begruendung verwendet.
+ATT&CK does not influence the priority class in the MVP. Optional ATT&CK context is only used to enrich the rationale.
 
-## Grenzen des Tools
+## Tool Boundaries
 
-- kein Schwachstellenscanner
-- keine Asset Discovery
-- keine Datenbank
-- keine Weboberflaeche
-- keine Ticketing- oder SIEM-Integration
-- keine heuristische oder LLM-basierte CVE-zu-ATT&CK-Zuordnung
-- keine Live-ATT&CK/TAXII-Integration im MVP
+- not a vulnerability scanner
+- no asset discovery
+- no database
+- no web UI
+- no ticketing or SIEM integration
+- no heuristic or LLM-generated CVE-to-ATT&CK mapping
+- no live ATT&CK/TAXII integration in the MVP
 
-Fehlende oder unvollstaendige Quelldaten werden als Warnungen behandelt. Das Tool versucht, trotzdem einen nutzbaren Report zu erzeugen.
+Missing or incomplete source data is treated as a warning, not an automatic failure. The tool attempts to produce a useful report whenever possible.
 
 ## Tests
 
@@ -190,50 +190,50 @@ Fehlende oder unvollstaendige Quelldaten werden als Warnungen behandelt. Das Too
 pytest
 ```
 
-Die Tests decken Parser, Provider-Parsing, Priorisierungslogik, Reporter und einen CLI-End-to-End-Lauf mit gemockten Providern ab.
+The test suite covers parsing, provider behavior, scoring, reporting, caching, and CLI end-to-end flows with mocked providers.
 
 ## Caching
 
-Standardmaessig nutzt das Tool einen kleinen Dateicache unter `.cache/vuln-prioritizer`. Der Cache beschleunigt wiederholte Demo- und Analyse-Laeufe fuer:
+By default, the tool uses a small file cache under `.cache/vuln-prioritizer`. The cache speeds up repeated demo and analysis runs for:
 
-- NVD-Einzelabfragen
-- EPSS-CVE-Daten
-- den online geladenen KEV-Katalog
+- NVD single-CVE lookups
+- EPSS CVE data
+- the online-loaded KEV catalog
 
-Der Cache ist optional und kann mit `--no-cache` deaktiviert werden.
+The cache is optional and can be disabled with `--no-cache`.
 
-## Open-Source-Vorbereitung
+## Open Source Readiness
 
-Das Repository enthaelt bereits grundlegende Maintainer-Dateien fuer eine spaetere Oeffnung:
+The repository already includes the core maintainer files needed for a future public release:
 
 - [LICENSE](LICENSE)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [SECURITY.md](SECURITY.md)
 
-Die Qualitaetssicherung ist aktuell lokal-first ausgelegt. Eine GitHub-Actions-Pipeline kann spaeter ohne Aenderung der Kernkommandos auf `make check` aufsetzen.
+The current quality workflow is local-first by design. If GitHub Actions are added later, the CI pipeline can simply build on `make check`.
 
 ## Roadmap
 
 ### MVP
 
-- TXT- und CSV-Input
-- NVD-, EPSS- und KEV-Anreicherung
-- feste Priorisierungsregeln
-- Terminal-Tabelle
-- Markdown- und JSON-Output
+- TXT and CSV input
+- NVD, EPSS, and KEV enrichment
+- fixed priority rules
+- terminal table output
+- Markdown and JSON output
 
 ### V1.1
 
-- bessere CLI-Zusammenfassungen
-- Vergleichsansicht `CVSS-only vs enriched`
-- erweiterte Filteroptionen
+- better CLI summaries
+- `CVSS-only vs enriched` comparison view
+- expanded filtering options
 
 ### V1.2
 
-- optionales ATT&CK-Mapping mit lokaler Datei
-- konfigurierbare Schwellwerte, sobald eine saubere Policy-Struktur vorliegt
+- optional ATT&CK mapping via local file
+- configurable thresholds once there is a clean policy model
 
 ### V1.3
 
-- weitere Cache-Strategien
-- erweiterter `explain`-Befehl mit mehr Exportformaten oder Vergleichsansichten
+- more cache strategies
+- expanded `explain` output and comparison capabilities

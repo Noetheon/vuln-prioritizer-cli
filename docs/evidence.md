@@ -1,36 +1,36 @@
 # Evidence Guide
 
-Diese Datei beschreibt die Artefakte, die fuer das Hochschulprojekt direkt nutzbar sind.
+This file describes the repository artifacts that are useful for demonstrations, evaluations, or project handoff.
 
-## Sichtbare Artefakte
+## Visible Artifacts
 
 - CLI: `vuln-prioritizer analyze`
-- Detailansicht: `vuln-prioritizer explain --cve ...`
-- Beispielinput: [data/sample_cves.txt](../data/sample_cves.txt)
-- Beispielreport: [docs/example_report.md](./example_report.md)
-- Beispiel-Explain-Export: [docs/example_explain.json](./example_explain.json)
-- Tests: `pytest`
-- Methodik: [docs/methodology.md](./methodology.md)
-- Executive Summary: [docs/executive_summary.md](./executive_summary.md)
+- detailed mode: `vuln-prioritizer explain --cve ...`
+- example input: [data/sample_cves.txt](../data/sample_cves.txt)
+- example report: [docs/example_report.md](./example_report.md)
+- example explain export: [docs/example_explain.json](./example_explain.json)
+- tests: `pytest`
+- methodology: [docs/methodology.md](./methodology.md)
+- executive summary: [docs/executive_summary.md](./executive_summary.md)
 
-## Empfohlene Evidence-Sammlung
+## Recommended Evidence Collection
 
-1. Screenshot eines erfolgreichen CLI-Laufs
-2. Screenshot oder Export des Markdown-Reports
-3. Testlauf mit gruenen Ergebnissen
-4. kurzer Methodenhinweis aus `docs/methodology.md`
-5. Executive-Sicht aus `docs/executive_summary.md`
+1. Screenshot of a successful CLI run
+2. Screenshot or export of the Markdown report
+3. Test run with passing results
+4. Short method summary from `docs/methodology.md`
+5. Executive summary from `docs/executive_summary.md`
 
-## Vergleichsidee: CVSS-only vs enriched
+## Comparison Idea: CVSS-only vs Enriched
 
-Ein einfacher manueller Vergleich fuer die Praesentation:
+A simple manual comparison for presentations or evaluations:
 
-| Sicht | Grundlage | Aussage |
+| View | Basis | Message |
 | --- | --- | --- |
-| CVSS-only | nur CVSS aus NVD | hohe Schwere, aber ohne Exploit-Kontext |
-| Enriched | CVSS + EPSS + KEV | bessere operative Reihenfolge fuer Patch und Mitigation |
+| CVSS-only | CVSS from NVD only | high severity, but limited exploit context |
+| Enriched | CVSS + EPSS + KEV | better operational remediation order |
 
-Beispielhafte Erwartung:
+Expected examples:
 
-- eine KEV-gelistete CVE wird auch bei mittlerem CVSS operativ hoch priorisiert
-- eine CVE mit hoher EPSS und hohem CVSS rutscht vor rein theoretisch schwere, aber aktuell weniger relevante Eintraege
+- a KEV-listed CVE remains operationally urgent even if its CVSS score is only moderate
+- a CVE with high EPSS and high CVSS outranks issues that are technically severe but currently less relevant

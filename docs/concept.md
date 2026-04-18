@@ -1,31 +1,31 @@
-# Konzept
+# Concept
 
-## Ziel
+## Goal
 
-`vuln-prioritizer` priorisiert bekannte CVEs fuer die operative Schwachstellenbearbeitung. Das Tool ist kein Scanner und kein komplettes Vulnerability-Management-System, sondern ein bewusst kleines CLI mit nachvollziehbarer Logik.
+`vuln-prioritizer` prioritizes known CVEs for operational vulnerability management. The tool is not a scanner and not a full vulnerability management platform. It is a deliberately small CLI with transparent logic.
 
-## Fachliche Leitidee
+## Core Security Idea
 
-- NVD liefert technische Metadaten und CVSS.
-- FIRST EPSS liefert einen Wahrscheinlichkeitswert fuer zeitnahe Ausnutzung.
-- CISA KEV liefert ein starkes Signal fuer bereits beobachtete Ausnutzung.
+- NVD provides technical metadata and CVSS.
+- FIRST EPSS provides a probability signal for near-term exploitation.
+- CISA KEV provides a strong signal for known real-world exploitation.
 
-Durch die Kombination dieser drei Quellen entsteht eine belastbarere Priorisierung als mit CVSS allein.
+Combining these three sources creates a more useful prioritization model than CVSS alone.
 
-## Zielgruppe
+## Target Audience
 
-- Blue Teams
-- Vulnerability Management
-- Security Engineering
-- Management- oder CISO-nahe Reporting-Use-Cases
+- Blue teams
+- Vulnerability management teams
+- Security engineering teams
+- Management and CISO-adjacent reporting use cases
 
-## Abgrenzung
+## Scope Boundaries
 
-Nicht im Scope:
+Out of scope:
 
-- Asset Discovery
-- Netzwerk-Scanning
-- Ticket-Automation
-- SIEM-Anbindung
-- Web-UI
-- Datenbank
+- asset discovery
+- network scanning
+- ticket automation
+- SIEM integration
+- web UI
+- database storage
