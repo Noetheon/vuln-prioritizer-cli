@@ -10,11 +10,7 @@ from vuln_prioritizer.parser import parse_input_file
 def test_parse_txt_normalizes_and_deduplicates(tmp_path: Path) -> None:
     input_file = tmp_path / "cves.txt"
     input_file.write_text(
-        "cve-2021-44228\n"
-        "invalid-entry\n"
-        "CVE-2021-44228\n"
-        "\n"
-        "CVE-2024-3094\n",
+        "cve-2021-44228\ninvalid-entry\nCVE-2021-44228\n\nCVE-2024-3094\n",
         encoding="utf-8",
     )
 
@@ -29,9 +25,7 @@ def test_parse_txt_normalizes_and_deduplicates(tmp_path: Path) -> None:
 def test_parse_csv_accepts_cve_id_header(tmp_path: Path) -> None:
     input_file = tmp_path / "cves.csv"
     input_file.write_text(
-        "cve_id,owner\n"
-        "CVE-2023-44487,web\n"
-        "cve-2022-22965,app\n",
+        "cve_id,owner\nCVE-2023-44487,web\ncve-2022-22965,app\n",
         encoding="utf-8",
     )
 

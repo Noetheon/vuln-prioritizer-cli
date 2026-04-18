@@ -47,7 +47,7 @@
       "CISA Known Exploited Vulnerabilities Catalog"
     ],
     "findings_count": 1,
-    "generated_at": "2026-04-18T14:35:21+00:00",
+    "generated_at": "2026-04-18T14:50:04+00:00",
     "input_path": "inline:CVE-2021-44228",
     "output_format": "json",
     "output_path": "docs/example_explain.json",

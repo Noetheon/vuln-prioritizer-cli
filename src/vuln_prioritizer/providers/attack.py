@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import csv
-from pathlib import Path
 import re
+from pathlib import Path
 
 from vuln_prioritizer.models import AttackData
 from vuln_prioritizer.utils import normalize_cve_id
@@ -55,11 +55,17 @@ class AttackProvider:
                 if not cve_id or cve_id not in requested:
                     continue
 
+                techniques = (
+                    _split_multi_value(row.get(techniques_field, "")) if techniques_field else []
+                )
+                tactics = _split_multi_value(row.get(tactics_field, "")) if tactics_field else []
+                note = (row.get(note_field) or "").strip() or None if note_field else None
+
                 index[cve_id] = AttackData(
                     cve_id=cve_id,
-                    attack_techniques=_split_multi_value(row.get(techniques_field, "")) if techniques_field else [],
-                    attack_tactics=_split_multi_value(row.get(tactics_field, "")) if tactics_field else [],
-                    attack_note=(row.get(note_field) or "").strip() or None if note_field else None,
+                    attack_techniques=techniques,
+                    attack_tactics=tactics,
+                    attack_note=note,
                 )
 
         return index, []

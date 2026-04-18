@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import re
-from typing import Iterable
+from collections.abc import Iterable
+from datetime import UTC, datetime
 
 CVE_ID_RE = re.compile(r"^CVE-\d{4}-\d{4,}$")
 
@@ -24,6 +24,8 @@ def normalize_cve_id(raw_value: str | None) -> str | None:
 def safe_float(value: object) -> float | None:
     """Best-effort float conversion."""
     if value in (None, "", "N.A."):
+        return None
+    if not isinstance(value, str | int | float):
         return None
     try:
         return float(value)
@@ -55,7 +57,7 @@ def chunk_cve_ids(cve_ids: Iterable[str], max_chars: int) -> list[list[str]]:
 
 def iso_utc_now() -> str:
     """Return the current UTC timestamp in ISO-8601 format."""
-    return datetime.now(tz=timezone.utc).replace(microsecond=0).isoformat()
+    return datetime.now(tz=UTC).replace(microsecond=0).isoformat()
 
 
 def comma_join(values: Iterable[str]) -> str:

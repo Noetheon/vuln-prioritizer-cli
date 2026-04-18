@@ -14,7 +14,9 @@ DEFAULT_CACHE_TTL_HOURS: Final = 24
 
 NVD_API_URL: Final = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 EPSS_API_URL: Final = "https://api.first.org/data/v1/epss"
-KEV_FEED_URL: Final = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+KEV_FEED_URL: Final = (
+    "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+)
 KEV_MIRROR_URL: Final = (
     "https://raw.githubusercontent.com/cisagov/kev-data/develop/"
     "known_exploited_vulnerabilities.json"

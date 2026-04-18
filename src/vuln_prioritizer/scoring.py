@@ -12,19 +12,12 @@ def determine_priority(nvd: NvdData, epss: EpssData, kev: KevData) -> tuple[str,
     epss_score = epss.epss
 
     if kev.in_kev or (
-        epss_score is not None
-        and epss_score >= 0.70
-        and cvss is not None
-        and cvss >= 7.0
+        epss_score is not None and epss_score >= 0.70 and cvss is not None and cvss >= 7.0
     ):
         label = "Critical"
-    elif (epss_score is not None and epss_score >= 0.40) or (
-        cvss is not None and cvss >= 9.0
-    ):
+    elif (epss_score is not None and epss_score >= 0.40) or (cvss is not None and cvss >= 9.0):
         label = "High"
-    elif (cvss is not None and cvss >= 7.0) or (
-        epss_score is not None and epss_score >= 0.10
-    ):
+    elif (cvss is not None and cvss >= 7.0) or (epss_score is not None and epss_score >= 0.10):
         label = "Medium"
     else:
         label = "Low"
@@ -60,9 +53,7 @@ def build_rationale(
 
     if attack and attack.attack_techniques:
         parts.append(
-            "Optional ATT&CK context is available for: "
-            + ", ".join(attack.attack_techniques)
-            + "."
+            "Optional ATT&CK context is available for: " + ", ".join(attack.attack_techniques) + "."
         )
 
     return " ".join(parts)

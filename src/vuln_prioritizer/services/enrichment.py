@@ -7,7 +7,11 @@ from pathlib import Path
 import requests
 
 from vuln_prioritizer.cache import FileCache
-from vuln_prioritizer.config import DEFAULT_CACHE_DIR, DEFAULT_CACHE_TTL_HOURS, DEFAULT_NVD_API_KEY_ENV
+from vuln_prioritizer.config import (
+    DEFAULT_CACHE_DIR,
+    DEFAULT_CACHE_TTL_HOURS,
+    DEFAULT_NVD_API_KEY_ENV,
+)
 from vuln_prioritizer.models import EnrichmentResult
 from vuln_prioritizer.providers.attack import AttackProvider
 from vuln_prioritizer.providers.epss import EpssProvider
@@ -29,7 +33,9 @@ class EnrichmentService:
     ) -> None:
         shared_session = session or requests.Session()
         cache = FileCache(cache_dir, cache_ttl_hours) if use_cache else None
-        self.nvd = NvdProvider.from_env(api_key_env=nvd_api_key_env, session=shared_session, cache=cache)
+        self.nvd = NvdProvider.from_env(
+            api_key_env=nvd_api_key_env, session=shared_session, cache=cache
+        )
         self.epss = EpssProvider(session=shared_session, cache=cache)
         self.kev = KevProvider(session=shared_session, cache=cache)
         self.attack = AttackProvider()

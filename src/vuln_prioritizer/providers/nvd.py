@@ -8,7 +8,12 @@ import time
 import requests
 
 from vuln_prioritizer.cache import FileCache
-from vuln_prioritizer.config import DEFAULT_NVD_API_KEY_ENV, HTTP_MAX_RETRIES, HTTP_TIMEOUT_SECONDS, NVD_API_URL
+from vuln_prioritizer.config import (
+    DEFAULT_NVD_API_KEY_ENV,
+    HTTP_MAX_RETRIES,
+    HTTP_TIMEOUT_SECONDS,
+    NVD_API_URL,
+)
 from vuln_prioritizer.models import NvdData
 from vuln_prioritizer.utils import safe_float
 
@@ -36,7 +41,7 @@ class NvdProvider:
         api_key_env: str = DEFAULT_NVD_API_KEY_ENV,
         session: requests.Session | None = None,
         cache: FileCache | None = None,
-    ) -> "NvdProvider":
+    ) -> NvdProvider:
         return cls(session=session, api_key=os.getenv(api_key_env), cache=cache)
 
     def fetch_many(self, cve_ids: list[str]) -> tuple[dict[str, NvdData], list[str]]:

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -32,8 +32,8 @@ class FileCache:
                 return None
             cached_at = datetime.fromisoformat(cached_at_raw)
             if cached_at.tzinfo is None:
-                cached_at = cached_at.replace(tzinfo=timezone.utc)
-            if datetime.now(timezone.utc) - cached_at > self.ttl:
+                cached_at = cached_at.replace(tzinfo=UTC)
+            if datetime.now(UTC) - cached_at > self.ttl:
                 return None
             return document.get("payload")
         except (OSError, json.JSONDecodeError, ValueError):

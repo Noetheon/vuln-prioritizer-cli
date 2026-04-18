@@ -54,6 +54,32 @@ cp .env.example .env
 
 Danach `NVD_API_KEY` in `.env` eintragen.
 
+## Entwicklung
+
+Dieses Repository ist aktuell bewusst auf **lokale Quality-Gates** ausgelegt. Wenn GitHub Actions gerade nicht verfuegbar sind, kannst du die wichtigsten Checks komplett lokal ausfuehren:
+
+```bash
+make install
+make check
+```
+
+Weitere lokale Helfer:
+
+```bash
+make format
+make test
+make typecheck
+make demo-report
+make demo-explain
+make precommit-install
+```
+
+Mit installiertem `pre-commit` kannst du automatische lokale Hooks aktivieren:
+
+```bash
+make precommit-install
+```
+
 ## Nutzung
 
 ### Basislauf
@@ -175,6 +201,16 @@ Standardmaessig nutzt das Tool einen kleinen Dateicache unter `.cache/vuln-prior
 - den online geladenen KEV-Katalog
 
 Der Cache ist optional und kann mit `--no-cache` deaktiviert werden.
+
+## Open-Source-Vorbereitung
+
+Das Repository enthaelt bereits grundlegende Maintainer-Dateien fuer eine spaetere Oeffnung:
+
+- [LICENSE](LICENSE)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [SECURITY.md](SECURITY.md)
+
+Die Qualitaetssicherung ist aktuell lokal-first ausgelegt. Eine GitHub-Actions-Pipeline kann spaeter ohne Aenderung der Kernkommandos auf `make check` aufsetzen.
 
 ## Roadmap
 

@@ -7,7 +7,12 @@ import time
 import requests
 
 from vuln_prioritizer.cache import FileCache
-from vuln_prioritizer.config import EPSS_API_URL, EPSS_QUERY_CHAR_LIMIT, HTTP_MAX_RETRIES, HTTP_TIMEOUT_SECONDS
+from vuln_prioritizer.config import (
+    EPSS_API_URL,
+    EPSS_QUERY_CHAR_LIMIT,
+    HTTP_MAX_RETRIES,
+    HTTP_TIMEOUT_SECONDS,
+)
 from vuln_prioritizer.models import EpssData
 from vuln_prioritizer.utils import chunk_cve_ids, safe_float
 
@@ -44,11 +49,7 @@ class EpssProvider:
             try:
                 payload = self._request_chunk(chunk)
             except Exception as exc:  # noqa: BLE001
-                warnings.append(
-                    "EPSS lookup failed for chunk "
-                    + ",".join(chunk)
-                    + f": {exc}"
-                )
+                warnings.append("EPSS lookup failed for chunk " + ",".join(chunk) + f": {exc}")
                 continue
 
             seen_in_chunk: set[str] = set()

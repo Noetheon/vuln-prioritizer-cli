@@ -9,7 +9,14 @@ from rich.console import Group
 from rich.panel import Panel
 from rich.table import Table
 
-from vuln_prioritizer.models import AnalysisContext, AttackData, EpssData, KevData, NvdData, PrioritizedFinding
+from vuln_prioritizer.models import (
+    AnalysisContext,
+    AttackData,
+    EpssData,
+    KevData,
+    NvdData,
+    PrioritizedFinding,
+)
 
 
 def render_findings_table(findings: list[PrioritizedFinding]) -> Table:
@@ -82,7 +89,8 @@ def generate_markdown_report(
             "",
             "## Findings",
             "",
-            "| CVE ID | Description | CVSS | Severity | EPSS | EPSS Percentile | KEV | ATT&CK Techniques | Priority | Rationale | Recommended Action |",
+            "| CVE ID | Description | CVSS | Severity | EPSS | EPSS Percentile "
+            "| KEV | ATT&CK Techniques | Priority | Rationale | Recommended Action |",
             "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
         ]
     )
@@ -156,9 +164,14 @@ def render_explain_view(
     signal_table.add_row("KEV Required Action", kev.required_action or "N.A.")
     signal_table.add_row("KEV Due Date", kev.due_date or "N.A.")
 
-    description_panel = Panel(normalize_whitespace(nvd.description or "N.A."), title="Description")
+    description_panel = Panel(
+        normalize_whitespace(nvd.description or "N.A."),
+        title="Description",
+    )
     rationale_panel = Panel(normalize_whitespace(finding.rationale), title="Rationale")
-    action_panel = Panel(normalize_whitespace(finding.recommended_action), title="Recommended Action")
+    action_panel = Panel(
+        normalize_whitespace(finding.recommended_action), title="Recommended Action"
+    )
 
     references = nvd.references[:10]
     references_panel = Panel(

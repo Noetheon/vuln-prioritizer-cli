@@ -92,9 +92,7 @@ class KevProvider:
         index: dict[str, KevData] = {}
         for vulnerability in vulnerabilities:
             cve_id = normalize_cve_id(
-                vulnerability.get("cveID")
-                or vulnerability.get("cveId")
-                or vulnerability.get("cve")
+                vulnerability.get("cveID") or vulnerability.get("cveId") or vulnerability.get("cve")
             )
             if not cve_id:
                 continue
@@ -115,10 +113,7 @@ class KevProvider:
         cached_payload = self.cache.get_json("kev", "catalog")
         if cached_payload is None:
             return None
-        return {
-            cve_id: KevData.model_validate(item)
-            for cve_id, item in cached_payload.items()
-        }
+        return {cve_id: KevData.model_validate(item) for cve_id, item in cached_payload.items()}
 
     def _store_in_cache(self, index: dict[str, KevData]) -> None:
         if self.cache is None:

@@ -5,10 +5,10 @@ from __future__ import annotations
 from enum import Enum
 from pathlib import Path
 
+import typer
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
-import typer
 
 from vuln_prioritizer.config import (
     DATA_SOURCES,
@@ -16,7 +16,15 @@ from vuln_prioritizer.config import (
     DEFAULT_CACHE_TTL_HOURS,
     DEFAULT_NVD_API_KEY_ENV,
 )
-from vuln_prioritizer.models import AnalysisContext, AttackData, EpssData, KevData, NvdData, PrioritizedFinding
+from vuln_prioritizer.models import (
+    AnalysisContext,
+    AttackData,
+    EnrichmentResult,
+    EpssData,
+    KevData,
+    NvdData,
+    PrioritizedFinding,
+)
 from vuln_prioritizer.parser import parse_input_file
 from vuln_prioritizer.reporter import (
     generate_explain_json,
@@ -57,7 +65,9 @@ def analyze(
     offline_attack_file: Path | None = typer.Option(None, "--offline-attack-file", dir_okay=False),
     nvd_api_key_env: str = typer.Option(DEFAULT_NVD_API_KEY_ENV, "--nvd-api-key-env"),
     no_cache: bool = typer.Option(False, "--no-cache"),
-    cache_dir: Path = typer.Option(DEFAULT_CACHE_DIR, "--cache-dir", file_okay=False, dir_okay=True),
+    cache_dir: Path = typer.Option(
+        DEFAULT_CACHE_DIR, "--cache-dir", file_okay=False, dir_okay=True
+    ),
     cache_ttl_hours: int = typer.Option(DEFAULT_CACHE_TTL_HOURS, "--cache-ttl-hours", min=1),
 ) -> None:
     """Analyze a CVE list and produce a prioritized terminal view and optional report."""
@@ -154,7 +164,9 @@ def explain(
     offline_attack_file: Path | None = typer.Option(None, "--offline-attack-file", dir_okay=False),
     nvd_api_key_env: str = typer.Option(DEFAULT_NVD_API_KEY_ENV, "--nvd-api-key-env"),
     no_cache: bool = typer.Option(False, "--no-cache"),
-    cache_dir: Path = typer.Option(DEFAULT_CACHE_DIR, "--cache-dir", file_okay=False, dir_okay=True),
+    cache_dir: Path = typer.Option(
+        DEFAULT_CACHE_DIR, "--cache-dir", file_okay=False, dir_okay=True
+    ),
     cache_ttl_hours: int = typer.Option(DEFAULT_CACHE_TTL_HOURS, "--cache-ttl-hours", min=1),
 ) -> None:
     """Explain the prioritization result for a single CVE."""
@@ -224,9 +236,14 @@ def explain(
 
     if output is not None:
         if format == OutputFormat.markdown:
-            write_output(output, generate_explain_markdown(finding, nvd, epss, kev, attack, context))
+            write_output(
+                output, generate_explain_markdown(finding, nvd, epss, kev, attack, context)
+            )
         elif format == OutputFormat.json:
-            write_output(output, generate_explain_json(finding, nvd, epss, kev, attack, context))
+            write_output(
+                output,
+                generate_explain_json(finding, nvd, epss, kev, attack, context),
+            )
         console.print(f"[green]Wrote {format.value} output to {output}[/green]")
 
 
@@ -240,7 +257,7 @@ def _build_findings(
     no_cache: bool,
     cache_dir: Path,
     cache_ttl_hours: int,
-) -> tuple[list[PrioritizedFinding], dict[str, int], object]:
+) -> tuple[list[PrioritizedFinding], dict[str, int], EnrichmentResult]:
     enricher = EnrichmentService(
         nvd_api_key_env=nvd_api_key_env,
         use_cache=not no_cache,
