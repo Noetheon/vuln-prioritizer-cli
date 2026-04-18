@@ -8,6 +8,7 @@ This file describes the repository artifacts that are useful for demonstrations,
 - comparison mode: `vuln-prioritizer compare`
 - detailed mode: `vuln-prioritizer explain --cve ...`
 - example input: [data/sample_cves.txt](../data/sample_cves.txt)
+- optional ATT&CK mapping template: [data/optional_attack_to_cve.csv](../data/optional_attack_to_cve.csv)
 - example report: [docs/example_report.md](./example_report.md)
 - example comparison report: [docs/example_compare.md](./example_compare.md)
 - example explain export: [docs/example_explain.json](./example_explain.json)
@@ -20,9 +21,10 @@ This file describes the repository artifacts that are useful for demonstrations,
 1. Screenshot of a successful CLI run
 2. Screenshot or export of the Markdown report
 3. Screenshot of the comparison command or the checked-in comparison report
-4. Test run with passing results
-5. Short method summary from `docs/methodology.md`
-6. Executive summary from `docs/executive_summary.md`
+4. Screenshot of `explain` showing the baseline comparison and optional ATT&CK context
+5. Test run with passing results
+6. Short method summary from `docs/methodology.md`
+7. Executive summary from `docs/executive_summary.md`
 
 ## Comparison Evidence: CVSS-only vs Enriched
 

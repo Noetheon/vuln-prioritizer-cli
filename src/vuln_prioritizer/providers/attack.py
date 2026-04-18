@@ -44,14 +44,21 @@ class AttackProvider:
             if not cve_field:
                 return {}, ["ATT&CK mapping CSV must contain a cve_id column."]
 
-            techniques_field = field_map.get("attack_techniques")
-            tactics_field = field_map.get("attack_tactics")
-            note_field = field_map.get("attack_note")
+            techniques_field = field_map.get("attack_techniques") or field_map.get("techniques")
+            tactics_field = field_map.get("attack_tactics") or field_map.get("tactics")
+            note_field = field_map.get("attack_note") or field_map.get("note")
 
             index: dict[str, AttackData] = {}
             requested = set(cve_ids)
-            for row in reader:
+            warnings: list[str] = []
+            for row_number, row in enumerate(reader, start=2):
                 cve_id = normalize_cve_id(row.get(cve_field))
+                if row.get(cve_field) and not cve_id:
+                    warnings.append(
+                        "Ignored ATT&CK mapping row with invalid CVE identifier at "
+                        f"line {row_number}: {row.get(cve_field)!r}"
+                    )
+                    continue
                 if not cve_id or cve_id not in requested:
                     continue
 
@@ -61,6 +68,8 @@ class AttackProvider:
                 tactics = _split_multi_value(row.get(tactics_field, "")) if tactics_field else []
                 note = (row.get(note_field) or "").strip() or None if note_field else None
 
+                if cve_id in index:
+                    warnings.append(f"ATT&CK mapping overrides duplicate row for {cve_id}.")
                 index[cve_id] = AttackData(
                     cve_id=cve_id,
                     attack_techniques=techniques,
@@ -68,8 +77,14 @@ class AttackProvider:
                     attack_note=note,
                 )
 
-        return index, []
+        return index, warnings
 
 
 def _split_multi_value(raw_value: str) -> list[str]:
-    return [part.strip() for part in SEPARATOR_RE.split(raw_value) if part.strip()]
+    normalized_values: list[str] = []
+    for part in SEPARATOR_RE.split(raw_value):
+        value = part.strip()
+        if not value or value in normalized_values:
+            continue
+        normalized_values.append(value)
+    return normalized_values

@@ -1,14 +1,17 @@
 # Vulnerability Priority Comparison Report
 
 ## Run Metadata
-- Generated at: `2026-04-18T15:14:14+00:00`
+- Generated at: `2026-04-18T15:28:28+00:00`
 - Input file: `data/sample_cves.txt`
 - Output format: `markdown`
 - ATT&CK context enabled: `no`
 
 ## Baselines
 - CVSS-only: Critical >= 9.0, High >= 7.0, Medium >= 4.0, Low otherwise
-- Enriched: KEV or (EPSS >= 0.70 and CVSS >= 7.0) => Critical; EPSS >= 0.40 or CVSS >= 9.0 => High; CVSS >= 7.0 or EPSS >= 0.10 => Medium
+- Enriched thresholds:
+  - Critical: KEV or (EPSS >= 0.70 and CVSS >= 7.0)
+  - High: EPSS >= 0.40 or CVSS >= 9.0
+  - Medium: CVSS >= 7.0 or EPSS >= 0.10
 
 ## Data Sources
 - NVD CVE API 2.0
@@ -26,6 +29,7 @@
 - EPSS hits: 4/4
 - KEV hits: 3/4
 - Active filters: None
+- Policy overrides: None
 - Enriched Critical: 4
 - Enriched High: 0
 - Enriched Medium: 0

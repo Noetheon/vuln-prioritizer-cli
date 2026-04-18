@@ -6,6 +6,7 @@ from pathlib import Path
 import requests
 
 from vuln_prioritizer.cache import FileCache
+from vuln_prioritizer.providers.attack import AttackProvider
 from vuln_prioritizer.providers.epss import EpssProvider
 from vuln_prioritizer.providers.kev import KevProvider
 from vuln_prioritizer.providers.nvd import NvdProvider
@@ -199,3 +200,32 @@ def test_kev_uses_mirror_when_primary_feed_fails() -> None:
 
     assert warnings == []
     assert results["CVE-2023-44487"].in_kev is True
+
+
+def test_attack_provider_accepts_alias_columns_and_reports_invalid_rows(tmp_path: Path) -> None:
+    attack_file = tmp_path / "attack.csv"
+    attack_file.write_text(
+        "\n".join(
+            [
+                "cve,techniques,tactics,note",
+                "CVE-2021-44228,T1190|T1190,Initial Access,Demo note",
+                "bad-value,T1499,Impact,Ignored row",
+                "CVE-2021-44228,T1059,Execution,Override row",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    provider = AttackProvider()
+    results, warnings = provider.fetch_many(
+        ["CVE-2021-44228"],
+        enabled=True,
+        offline_file=attack_file,
+    )
+
+    assert results["CVE-2021-44228"].attack_techniques == ["T1059"]
+    assert results["CVE-2021-44228"].attack_tactics == ["Execution"]
+    assert results["CVE-2021-44228"].attack_note == "Override row"
+    assert any("invalid CVE identifier" in warning for warning in warnings)
+    assert any("overrides duplicate row" in warning for warning in warnings)

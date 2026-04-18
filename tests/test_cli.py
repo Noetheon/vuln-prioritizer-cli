@@ -158,6 +158,55 @@ def test_cli_compare_json_export(monkeypatch, tmp_path: Path) -> None:
     assert any(item["changed"] for item in payload["comparisons"])
 
 
+def test_cli_analyze_supports_custom_policy_thresholds(monkeypatch, tmp_path: Path) -> None:
+    input_file = _write_input_file(tmp_path)
+    output_file = tmp_path / "policy.json"
+    _install_fake_providers(monkeypatch)
+
+    result = runner.invoke(
+        app,
+        [
+            "analyze",
+            "--input",
+            str(input_file),
+            "--output",
+            str(output_file),
+            "--format",
+            "json",
+            "--high-epss-threshold",
+            "0.30",
+        ],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(output_file.read_text(encoding="utf-8"))
+
+    finding = next(item for item in payload["findings"] if item["cve_id"] == "CVE-2024-0004")
+    assert finding["priority_label"] == "High"
+    assert payload["metadata"]["policy_overrides"] == ["high-epss=0.300"]
+
+
+def test_cli_rejects_invalid_policy_thresholds(monkeypatch, tmp_path: Path) -> None:
+    input_file = _write_input_file(tmp_path)
+    _install_fake_providers(monkeypatch)
+
+    result = runner.invoke(
+        app,
+        [
+            "analyze",
+            "--input",
+            str(input_file),
+            "--high-epss-threshold",
+            "0.30",
+            "--medium-epss-threshold",
+            "0.35",
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "EPSS thresholds must descend" in result.stdout
+
+
 def test_cli_compare_rejects_output_with_table_format(tmp_path: Path) -> None:
     input_file = _write_input_file(tmp_path)
 
@@ -198,7 +247,10 @@ def test_cli_explain_end_to_end_with_mocked_providers(monkeypatch, tmp_path: Pat
     assert result.exit_code == 0
     assert "Explanation for CVE-2021-44228" in result.stdout
     assert output_file.exists()
-    assert '"priority_label": "Critical"' in output_file.read_text(encoding="utf-8")
+    payload = json.loads(output_file.read_text(encoding="utf-8"))
+    assert payload["finding"]["priority_label"] == "Critical"
+    assert payload["comparison"]["cvss_only_label"] == "Critical"
+    assert payload["attack"]["attack_note"] == "Representative demo mapping note."
 
 
 def _write_input_file(tmp_path: Path) -> Path:
@@ -270,8 +322,8 @@ def _install_fake_providers(monkeypatch) -> None:  # noqa: ANN001
                 ),
                 "CVE-2024-0004": EpssData(
                     cve_id="CVE-2024-0004",
-                    epss=0.05,
-                    percentile=0.12,
+                    epss=0.30,
+                    percentile=0.66,
                 ),
             },
             [],
@@ -295,6 +347,7 @@ def _install_fake_providers(monkeypatch) -> None:  # noqa: ANN001
                     cve_id="CVE-2021-44228",
                     attack_techniques=["T1190"],
                     attack_tactics=["Initial Access"],
+                    attack_note="Representative demo mapping note.",
                 )
             },
             [],

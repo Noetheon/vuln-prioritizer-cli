@@ -2,7 +2,7 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Status: MVP](https://img.shields.io/badge/status-MVP-orange)](#roadmap)
+[![Status: active](https://img.shields.io/badge/status-active-brightgreen)](#roadmap)
 [![Quality: local-first](https://img.shields.io/badge/quality-local--first-informational)](#development)
 
 `vuln-prioritizer` is a small Python CLI for prioritizing known vulnerabilities. It reads CVE lists, enriches them with NVD, EPSS, and CISA KEV data, and produces a transparent ranking for operational remediation decisions.
@@ -92,6 +92,8 @@ make demo-explain
 make precommit-install
 ```
 
+A slim GitHub Actions workflow is also included now, but the repository still treats local `make check` as the primary quality gate.
+
 ## Highlights
 
 - focused CLI for prioritizing known CVEs
@@ -167,6 +169,14 @@ vuln-prioritizer compare \
   --format markdown
 ```
 
+### Use a Local ATT&CK Mapping File
+
+```bash
+vuln-prioritizer explain \
+  --cve CVE-2021-44228 \
+  --offline-attack-file data/optional_attack_to_cve.csv
+```
+
 ### Important Options
 
 - `--input`: TXT or CSV file containing CVEs
@@ -178,6 +188,12 @@ vuln-prioritizer compare \
 - `--min-cvss FLOAT`: keep only findings with CVSS greater than or equal to the threshold
 - `--min-epss FLOAT`: keep only findings with EPSS greater than or equal to the threshold
 - `--sort-by priority|epss|cvss|cve`: override display and export ordering
+- `--critical-epss-threshold FLOAT`: override the enriched `Critical` EPSS threshold
+- `--critical-cvss-threshold FLOAT`: override the enriched `Critical` CVSS threshold
+- `--high-epss-threshold FLOAT`: override the enriched `High` EPSS threshold
+- `--high-cvss-threshold FLOAT`: override the enriched `High` CVSS threshold
+- `--medium-epss-threshold FLOAT`: override the enriched `Medium` EPSS threshold
+- `--medium-cvss-threshold FLOAT`: override the enriched `Medium` CVSS threshold
 - `--max-cves N`: limit analysis to the first `N` unique CVEs
 - `--offline-kev-file PATH`: use a local KEV JSON or CSV file
 - `--offline-attack-file PATH`: use a local ATT&CK mapping CSV file
@@ -212,6 +228,7 @@ CVE-2024-3094
 The CLI always prints a compact terminal table. A full sample report is checked in at [docs/example_report.md](docs/example_report.md).
 The comparison view is checked in at [docs/example_compare.md](docs/example_compare.md).
 For the detailed single-CVE mode, a sample export is available at [docs/example_explain.json](docs/example_explain.json).
+An optional local ATT&CK mapping template is included at [data/optional_attack_to_cve.csv](data/optional_attack_to_cve.csv).
 
 ## Priority Logic
 
@@ -223,6 +240,21 @@ The MVP rules are intentionally simple and easy to explain:
 - `Low`: everything else
 
 ATT&CK does not influence the priority class in the MVP. Optional ATT&CK context is only used to enrich the rationale.
+
+## Configurable Thresholds
+
+The default thresholds remain small and opinionated, but the CLI now supports policy overrides when you need a more aggressive or more conservative triage mode.
+
+Example:
+
+```bash
+vuln-prioritizer analyze \
+  --input data/sample_cves.txt \
+  --high-epss-threshold 0.30 \
+  --medium-cvss-threshold 6.5
+```
+
+Policy overrides are shown in the terminal summary and exported metadata so the resulting report stays auditable.
 
 ## Comparison Baseline
 
@@ -274,7 +306,7 @@ The repository already includes the core maintainer files needed for a future pu
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [SECURITY.md](SECURITY.md)
 
-The current quality workflow is local-first by design. If GitHub Actions are added later, the CI pipeline can simply build on `make check`.
+The quality workflow is local-first by design. The included GitHub Actions workflow simply mirrors `make check` so local and hosted validation stay aligned.
 
 ## Roadmap
 
@@ -282,26 +314,17 @@ The current quality workflow is local-first by design. If GitHub Actions are add
 
 - TXT and CSV input
 - NVD, EPSS, and KEV enrichment
-- fixed enriched priority rules
-- richer run summaries with coverage and filter metadata
+- configurable enriched priority policy thresholds
+- richer run summaries with coverage, ATT&CK hits, and filter metadata
 - post-enrichment filters and sort overrides
 - `compare` command for `CVSS-only vs enriched`
+- richer `explain` output with baseline comparison
+- optional local ATT&CK mapping workflow with a checked-in template
 - terminal, Markdown, and JSON outputs
+- slim GitHub Actions CI mirroring `make check`
 
-### V1.2
+### Possible Future Work
 
-- configurable thresholds for alternate prioritization policies
-- stronger ATT&CK user flows based on local mapping files
-- more guided comparison presets for common demo scenarios
-
-### V1.3
-
-- richer `explain` comparisons against the baseline view
-- additional cache strategy improvements for repeated demo runs
-- release automation once public CI usage is available
-- configurable thresholds once there is a clean policy model
-
-### V1.3
-
-- more cache strategies
-- expanded `explain` output and comparison capabilities
+- named policy presets for common operating modes
+- additional cache strategies and reporting around cache hits
+- release automation beyond tagging and changelog maintenance

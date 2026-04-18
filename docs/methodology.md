@@ -48,6 +48,8 @@ Input is normalized, validated, and deduplicated. Invalid lines do not immediate
 - `Medium`: `CVSS >= 7.0` or `EPSS >= 0.10`
 - `Low`: everything else
 
+These defaults are now implemented through a policy model. The CLI can override them with explicit threshold flags while preserving the default behavior when no overrides are provided.
+
 ## Filtering
 
 Filters are applied only after enrichment and priority calculation.
@@ -68,6 +70,15 @@ The `compare` command evaluates the same enriched findings against a determinist
 
 `delta_rank` is calculated as `cvss_only_rank - enriched_rank`.
 Positive values mean the enriched model treats the CVE as more urgent than the baseline. Negative values mean the enriched model lowers the operational urgency.
+
+## Explain Mode
+
+`explain` now includes the same baseline comparison logic as `compare` for a single CVE:
+
+- CVSS-only baseline label
+- enriched label
+- delta versus the baseline
+- deterministic reason for the change or non-change
 
 ## Sorting
 

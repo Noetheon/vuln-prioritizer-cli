@@ -3,21 +3,41 @@
 from __future__ import annotations
 
 from vuln_prioritizer.config import PRIORITY_RANKS, PRIORITY_RECOMMENDATIONS
-from vuln_prioritizer.models import AttackData, EpssData, KevData, NvdData, PrioritizedFinding
+from vuln_prioritizer.models import (
+    AttackData,
+    EpssData,
+    KevData,
+    NvdData,
+    PrioritizedFinding,
+    PriorityPolicy,
+)
 
 
-def determine_priority(nvd: NvdData, epss: EpssData, kev: KevData) -> tuple[str, int]:
+def determine_priority(
+    nvd: NvdData,
+    epss: EpssData,
+    kev: KevData,
+    policy: PriorityPolicy | None = None,
+) -> tuple[str, int]:
     """Apply the fixed MVP priority rules."""
+    active_policy = policy or PriorityPolicy()
     cvss = nvd.cvss_base_score
     epss_score = epss.epss
 
     if kev.in_kev or (
-        epss_score is not None and epss_score >= 0.70 and cvss is not None and cvss >= 7.0
+        epss_score is not None
+        and epss_score >= active_policy.critical_epss_threshold
+        and cvss is not None
+        and cvss >= active_policy.critical_cvss_threshold
     ):
         label = "Critical"
-    elif (epss_score is not None and epss_score >= 0.40) or (cvss is not None and cvss >= 9.0):
+    elif (epss_score is not None and epss_score >= active_policy.high_epss_threshold) or (
+        cvss is not None and cvss >= active_policy.high_cvss_threshold
+    ):
         label = "High"
-    elif (cvss is not None and cvss >= 7.0) or (epss_score is not None and epss_score >= 0.10):
+    elif (cvss is not None and cvss >= active_policy.medium_cvss_threshold) or (
+        epss_score is not None and epss_score >= active_policy.medium_epss_threshold
+    ):
         label = "Medium"
     else:
         label = "Low"
@@ -69,6 +89,8 @@ def build_rationale(
         parts.append(
             "Optional ATT&CK context is available for: " + ", ".join(attack.attack_techniques) + "."
         )
+    if attack and attack.attack_note:
+        parts.append(f"ATT&CK mapping note: {attack.attack_note.rstrip('.')}.")
 
     return " ".join(parts)
 

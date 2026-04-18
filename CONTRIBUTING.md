@@ -19,7 +19,7 @@ make install
 
 ## Local Quality Gate
 
-GitHub Actions are intentionally not required for day-to-day development. Run all checks locally:
+GitHub Actions are intentionally not required for day-to-day development. The CI workflow mirrors the local gate below, so run all checks locally before pushing:
 
 ```bash
 make check
@@ -38,6 +38,7 @@ When output changes materially, regenerate the checked-in demo artifacts:
 
 ```bash
 make demo-report
+make demo-compare
 make demo-explain
 ```
 

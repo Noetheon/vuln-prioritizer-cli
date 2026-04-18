@@ -2,7 +2,14 @@ from __future__ import annotations
 
 import pytest
 
-from vuln_prioritizer.models import AttackData, EpssData, KevData, NvdData, PrioritizedFinding
+from vuln_prioritizer.models import (
+    AttackData,
+    EpssData,
+    KevData,
+    NvdData,
+    PrioritizedFinding,
+    PriorityPolicy,
+)
 from vuln_prioritizer.scoring import determine_cvss_only_priority, determine_priority
 from vuln_prioritizer.services.prioritization import PrioritizationService
 
@@ -78,6 +85,18 @@ def test_missing_scores_do_not_break_prioritization() -> None:
     assert rank == 4
 
 
+def test_custom_policy_changes_priority_thresholds() -> None:
+    policy = PriorityPolicy(high_epss_threshold=0.30)
+    nvd = NvdData(cve_id="CVE-2024-0001", cvss_base_score=6.5, cvss_severity="MEDIUM")
+    epss_data = EpssData(cve_id="CVE-2024-0001", epss=0.30, percentile=0.7)
+    kev = KevData(cve_id="CVE-2024-0001", in_kev=False)
+
+    label, rank = determine_priority(nvd, epss_data, kev, policy)
+
+    assert label == "High"
+    assert rank == 2
+
+
 def test_attack_context_does_not_change_priority() -> None:
     service = PrioritizationService()
     cve_id = "CVE-2024-0001"
@@ -107,6 +126,12 @@ def test_attack_context_does_not_change_priority() -> None:
     assert findings_without_attack[0].priority_label == "High"
     assert findings_with_attack[0].priority_label == "High"
     assert findings_with_attack[0].attack_techniques == ["T1190"]
+
+
+def test_priority_policy_override_descriptions_only_include_changes() -> None:
+    policy = PriorityPolicy(high_epss_threshold=0.35, medium_cvss_threshold=6.5)
+
+    assert policy.override_descriptions() == ["high-epss=0.350", "medium-cvss=6.5"]
 
 
 def test_filter_findings_applies_priority_and_kev_filters() -> None:

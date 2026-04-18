@@ -12,6 +12,7 @@ from vuln_prioritizer.models import (
     KevData,
     NvdData,
     PrioritizedFinding,
+    PriorityPolicy,
 )
 from vuln_prioritizer.scoring import (
     build_comparison_reason,
@@ -26,6 +27,9 @@ SortField = Literal["priority", "epss", "cvss", "cve"]
 
 class PrioritizationService:
     """Create final prioritized findings from enrichment data."""
+
+    def __init__(self, policy: PriorityPolicy | None = None) -> None:
+        self.policy = policy or PriorityPolicy()
 
     def prioritize(
         self,
@@ -44,7 +48,7 @@ class PrioritizationService:
             kev = kev_data.get(cve_id, KevData(cve_id=cve_id, in_kev=False))
             attack = attack_data.get(cve_id, AttackData(cve_id=cve_id))
 
-            priority_label, priority_rank = determine_priority(nvd, epss, kev)
+            priority_label, priority_rank = determine_priority(nvd, epss, kev, self.policy)
             findings.append(
                 PrioritizedFinding(
                     cve_id=cve_id,
@@ -55,6 +59,8 @@ class PrioritizationService:
                     epss_percentile=epss.percentile,
                     in_kev=kev.in_kev,
                     attack_techniques=attack.attack_techniques,
+                    attack_tactics=attack.attack_tactics,
+                    attack_note=attack.attack_note,
                     priority_label=priority_label,
                     priority_rank=priority_rank,
                     rationale=build_rationale(nvd, epss, kev, attack),

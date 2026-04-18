@@ -86,6 +86,8 @@ def render_summary_panel(
         f"EPSS hits: {context.epss_hits}/{context.valid_input}",
         f"KEV hits: {context.kev_hits}/{context.valid_input}",
     ]
+    if context.attack_enabled:
+        lines.append(f"ATT&CK hits: {context.attack_hits}/{context.valid_input}")
 
     if mode == "compare" and changed_count is not None:
         unchanged_count = max(context.findings_count - changed_count, 0)
@@ -101,6 +103,8 @@ def render_summary_panel(
 
     if context.active_filters:
         lines.append("Active filters: " + ", ".join(context.active_filters))
+    if context.policy_overrides:
+        lines.append("Policy overrides: " + ", ".join(context.policy_overrides))
 
     return Panel("\n".join(lines), title="Summary")
 
@@ -118,19 +122,23 @@ def generate_markdown_report(
         f"- Input file: `{context.input_path}`",
         f"- Output format: `{context.output_format}`",
         f"- ATT&CK context enabled: `{'yes' if context.attack_enabled else 'no'}`",
-        "",
-        "## Data Sources",
     ]
+    if context.attack_mapping_file:
+        summary_lines.append(f"- ATT&CK mapping file: `{context.attack_mapping_file}`")
+
+    summary_lines.extend(["", "## Data Sources"])
     summary_lines.extend(f"- {source}" for source in context.data_sources)
 
     summary_lines.extend(
         [
             "",
             "## Methodology",
-            "- Critical: KEV or (EPSS >= 0.70 and CVSS >= 7.0)",
-            "- High: EPSS >= 0.40 or CVSS >= 9.0",
-            "- Medium: CVSS >= 7.0 or EPSS >= 0.10",
-            "- Low: all remaining CVEs",
+        ]
+    )
+    summary_lines.extend(f"- {line}" for line in context.priority_policy.methodology_lines())
+
+    summary_lines.extend(
+        [
             "",
             "## Summary",
             f"- Total input rows: {context.total_input}",
@@ -142,10 +150,13 @@ def generate_markdown_report(
             f"- KEV hits: {context.kev_hits}/{context.valid_input}",
         ]
     )
+    if context.attack_enabled:
+        summary_lines.append(f"- ATT&CK hits: {context.attack_hits}/{context.valid_input}")
     for label in ("Critical", "High", "Medium", "Low"):
         summary_lines.append(f"- {label}: {context.counts_by_priority.get(label, 0)}")
 
     summary_lines.extend(["- Active filters: " + format_filters(context.active_filters)])
+    summary_lines.extend(["- Policy overrides: " + format_filters(context.policy_overrides)])
 
     summary_lines.extend(["", "## Warnings"])
     if context.warnings:
@@ -214,14 +225,21 @@ def generate_compare_markdown(
         f"- Input file: `{context.input_path}`",
         f"- Output format: `{context.output_format}`",
         f"- ATT&CK context enabled: `{'yes' if context.attack_enabled else 'no'}`",
-        "",
-        "## Baselines",
-        "- CVSS-only: Critical >= 9.0, High >= 7.0, Medium >= 4.0, Low otherwise",
-        "- Enriched: KEV or (EPSS >= 0.70 and CVSS >= 7.0) => Critical; "
-        "EPSS >= 0.40 or CVSS >= 9.0 => High; CVSS >= 7.0 or EPSS >= 0.10 => Medium",
-        "",
-        "## Data Sources",
     ]
+    if context.attack_mapping_file:
+        lines.append(f"- ATT&CK mapping file: `{context.attack_mapping_file}`")
+
+    lines.extend(
+        [
+            "",
+            "## Baselines",
+            "- CVSS-only: Critical >= 9.0, High >= 7.0, Medium >= 4.0, Low otherwise",
+            "- Enriched thresholds:",
+        ]
+    )
+    lines.extend(f"  - {line}" for line in context.priority_policy.methodology_lines()[:3])
+
+    lines.extend(["", "## Data Sources"])
     lines.extend(f"- {source}" for source in context.data_sources)
     lines.extend(
         [
@@ -237,8 +255,11 @@ def generate_compare_markdown(
             f"- EPSS hits: {context.epss_hits}/{context.valid_input}",
             f"- KEV hits: {context.kev_hits}/{context.valid_input}",
             f"- Active filters: {format_filters(context.active_filters)}",
+            f"- Policy overrides: {format_filters(context.policy_overrides)}",
         ]
     )
+    if context.attack_enabled:
+        lines.append(f"- ATT&CK hits: {context.attack_hits}/{context.valid_input}")
 
     for label in ("Critical", "High", "Medium", "Low"):
         lines.append(f"- Enriched {label}: {context.counts_by_priority.get(label, 0)}")
@@ -307,6 +328,7 @@ def render_explain_view(
     epss: EpssData,
     kev: KevData,
     attack: AttackData,
+    comparison: ComparisonFinding | None = None,
 ) -> Group:
     """Build a detailed terminal view for one CVE."""
     signal_table = Table(title=f"Explanation for {finding.cve_id}", show_header=False)
@@ -323,16 +345,24 @@ def render_explain_view(
     signal_table.add_row("CWEs", comma_or_na(nvd.cwes))
     signal_table.add_row("ATT&CK Techniques", comma_or_na(attack.attack_techniques))
     signal_table.add_row("ATT&CK Tactics", comma_or_na(attack.attack_tactics))
+    signal_table.add_row("ATT&CK Note", attack.attack_note or "N.A.")
     signal_table.add_row("KEV Vendor", kev.vendor_project or "N.A.")
     signal_table.add_row("KEV Product", kev.product or "N.A.")
     signal_table.add_row("KEV Required Action", kev.required_action or "N.A.")
     signal_table.add_row("KEV Due Date", kev.due_date or "N.A.")
+    if comparison is not None:
+        signal_table.add_row("CVSS-only Baseline", comparison.cvss_only_label)
+        signal_table.add_row("Delta vs Baseline", format_change(comparison.delta_rank))
 
     description_panel = Panel(
         normalize_whitespace(nvd.description or "N.A."),
         title="Description",
     )
     rationale_panel = Panel(normalize_whitespace(finding.rationale), title="Rationale")
+    comparison_panel = Panel(
+        normalize_whitespace(comparison.change_reason if comparison is not None else "N.A."),
+        title="Comparison",
+    )
     action_panel = Panel(
         normalize_whitespace(finding.recommended_action), title="Recommended Action"
     )
@@ -343,7 +373,14 @@ def render_explain_view(
         title="References (first 10)",
     )
 
-    return Group(signal_table, description_panel, rationale_panel, action_panel, references_panel)
+    return Group(
+        signal_table,
+        description_panel,
+        rationale_panel,
+        comparison_panel,
+        action_panel,
+        references_panel,
+    )
 
 
 def generate_explain_markdown(
@@ -353,6 +390,7 @@ def generate_explain_markdown(
     kev: KevData,
     attack: AttackData,
     context: AnalysisContext,
+    comparison: ComparisonFinding | None = None,
 ) -> str:
     """Render a single-CVE detailed Markdown explanation."""
     lines = [
@@ -366,6 +404,9 @@ def generate_explain_markdown(
     ]
     if context.cache_dir:
         lines.append(f"- Cache directory: `{context.cache_dir}`")
+    if context.attack_mapping_file:
+        lines.append(f"- ATT&CK mapping file: `{context.attack_mapping_file}`")
+    lines.append(f"- Policy overrides: `{format_filters(context.policy_overrides)}`")
 
     lines.extend(
         [
@@ -382,12 +423,25 @@ def generate_explain_markdown(
             f"- CWEs: {comma_or_na(nvd.cwes)}",
             f"- ATT&CK Techniques: {comma_or_na(attack.attack_techniques)}",
             f"- ATT&CK Tactics: {comma_or_na(attack.attack_tactics)}",
+            f"- ATT&CK Note: {attack.attack_note or 'N.A.'}",
             "",
             "## Description",
             normalize_whitespace(nvd.description or "N.A."),
             "",
             "## Rationale",
             normalize_whitespace(finding.rationale),
+            "",
+            "## Comparison",
+            f"- CVSS-only Baseline: `{comparison.cvss_only_label if comparison else 'N.A.'}`",
+            (
+                f"- Enriched Priority: `"
+                f"{comparison.enriched_label if comparison else finding.priority_label}`"
+            ),
+            (
+                f"- Delta vs Baseline: `"
+                f"{format_change(comparison.delta_rank) if comparison else 'N.A.'}`"
+            ),
+            normalize_whitespace(comparison.change_reason if comparison is not None else "N.A."),
             "",
             "## Recommended Action",
             normalize_whitespace(finding.recommended_action),
@@ -416,6 +470,7 @@ def generate_explain_json(
     kev: KevData,
     attack: AttackData,
     context: AnalysisContext,
+    comparison: ComparisonFinding | None = None,
 ) -> str:
     """Render a single-CVE detailed JSON explanation."""
     payload = {
@@ -425,6 +480,7 @@ def generate_explain_json(
         "epss": epss.model_dump(),
         "kev": kev.model_dump(),
         "attack": attack.model_dump(),
+        "comparison": comparison.model_dump() if comparison is not None else None,
     }
     return json.dumps(payload, indent=2, sort_keys=True)
 

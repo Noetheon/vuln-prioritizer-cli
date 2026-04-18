@@ -23,5 +23,6 @@ Security teams often need to assess more known vulnerabilities than they can rem
 The tool provides:
 
 - a prioritized terminal table for operational use
+- a comparison view to show how enriched prioritization differs from CVSS-only triage
 - a Markdown report for documentation and reporting
 - optional JSON output for future integrations or downstream processing

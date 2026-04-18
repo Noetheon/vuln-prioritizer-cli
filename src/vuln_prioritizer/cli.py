@@ -7,6 +7,7 @@ from pathlib import Path
 
 import typer
 from dotenv import load_dotenv
+from pydantic import ValidationError
 from rich.console import Console
 from rich.panel import Panel
 
@@ -24,6 +25,7 @@ from vuln_prioritizer.models import (
     KevData,
     NvdData,
     PrioritizedFinding,
+    PriorityPolicy,
 )
 from vuln_prioritizer.parser import parse_input_file
 from vuln_prioritizer.reporter import (
@@ -91,6 +93,12 @@ def analyze(
     min_cvss: float | None = typer.Option(None, "--min-cvss", min=0.0, max=10.0),
     min_epss: float | None = typer.Option(None, "--min-epss", min=0.0, max=1.0),
     sort_by: SortBy = typer.Option(SortBy.priority, "--sort-by"),
+    critical_epss_threshold: float = typer.Option(0.70, "--critical-epss-threshold"),
+    critical_cvss_threshold: float = typer.Option(7.0, "--critical-cvss-threshold"),
+    high_epss_threshold: float = typer.Option(0.40, "--high-epss-threshold"),
+    high_cvss_threshold: float = typer.Option(9.0, "--high-cvss-threshold"),
+    medium_epss_threshold: float = typer.Option(0.10, "--medium-epss-threshold"),
+    medium_cvss_threshold: float = typer.Option(7.0, "--medium-cvss-threshold"),
     max_cves: int | None = typer.Option(None, "--max-cves", min=1),
     offline_kev_file: Path | None = typer.Option(None, "--offline-kev-file", dir_okay=False),
     offline_attack_file: Path | None = typer.Option(None, "--offline-attack-file", dir_okay=False),
@@ -115,6 +123,14 @@ def analyze(
         min_cvss=min_cvss,
         min_epss=min_epss,
         sort_by=sort_by,
+        policy=_build_priority_policy(
+            critical_epss_threshold=critical_epss_threshold,
+            critical_cvss_threshold=critical_cvss_threshold,
+            high_epss_threshold=high_epss_threshold,
+            high_cvss_threshold=high_cvss_threshold,
+            medium_epss_threshold=medium_epss_threshold,
+            medium_cvss_threshold=medium_cvss_threshold,
+        ),
         max_cves=max_cves,
         offline_kev_file=offline_kev_file,
         offline_attack_file=offline_attack_file,
@@ -147,6 +163,12 @@ def compare(
     min_cvss: float | None = typer.Option(None, "--min-cvss", min=0.0, max=10.0),
     min_epss: float | None = typer.Option(None, "--min-epss", min=0.0, max=1.0),
     sort_by: SortBy = typer.Option(SortBy.priority, "--sort-by"),
+    critical_epss_threshold: float = typer.Option(0.70, "--critical-epss-threshold"),
+    critical_cvss_threshold: float = typer.Option(7.0, "--critical-cvss-threshold"),
+    high_epss_threshold: float = typer.Option(0.40, "--high-epss-threshold"),
+    high_cvss_threshold: float = typer.Option(9.0, "--high-cvss-threshold"),
+    medium_epss_threshold: float = typer.Option(0.10, "--medium-epss-threshold"),
+    medium_cvss_threshold: float = typer.Option(7.0, "--medium-cvss-threshold"),
     max_cves: int | None = typer.Option(None, "--max-cves", min=1),
     offline_kev_file: Path | None = typer.Option(None, "--offline-kev-file", dir_okay=False),
     offline_attack_file: Path | None = typer.Option(None, "--offline-attack-file", dir_okay=False),
@@ -171,6 +193,14 @@ def compare(
         min_cvss=min_cvss,
         min_epss=min_epss,
         sort_by=sort_by,
+        policy=_build_priority_policy(
+            critical_epss_threshold=critical_epss_threshold,
+            critical_cvss_threshold=critical_cvss_threshold,
+            high_epss_threshold=high_epss_threshold,
+            high_cvss_threshold=high_cvss_threshold,
+            medium_epss_threshold=medium_epss_threshold,
+            medium_cvss_threshold=medium_cvss_threshold,
+        ),
         max_cves=max_cves,
         offline_kev_file=offline_kev_file,
         offline_attack_file=offline_attack_file,
@@ -202,6 +232,12 @@ def explain(
     output: Path | None = typer.Option(None, "--output", dir_okay=False),
     format: OutputFormat = typer.Option(OutputFormat.table, "--format"),
     no_attack: bool = typer.Option(False, "--no-attack"),
+    critical_epss_threshold: float = typer.Option(0.70, "--critical-epss-threshold"),
+    critical_cvss_threshold: float = typer.Option(7.0, "--critical-cvss-threshold"),
+    high_epss_threshold: float = typer.Option(0.40, "--high-epss-threshold"),
+    high_cvss_threshold: float = typer.Option(9.0, "--high-cvss-threshold"),
+    medium_epss_threshold: float = typer.Option(0.10, "--medium-epss-threshold"),
+    medium_cvss_threshold: float = typer.Option(7.0, "--medium-cvss-threshold"),
     offline_kev_file: Path | None = typer.Option(None, "--offline-kev-file", dir_okay=False),
     offline_attack_file: Path | None = typer.Option(None, "--offline-attack-file", dir_okay=False),
     nvd_api_key_env: str = typer.Option(DEFAULT_NVD_API_KEY_ENV, "--nvd-api-key-env"),
@@ -220,9 +256,18 @@ def explain(
         console.print(f"[red]Input validation failed:[/red] Invalid CVE identifier: {cve!r}")
         raise typer.Exit(code=2)
 
+    policy = _build_priority_policy(
+        critical_epss_threshold=critical_epss_threshold,
+        critical_cvss_threshold=critical_cvss_threshold,
+        high_epss_threshold=high_epss_threshold,
+        high_cvss_threshold=high_cvss_threshold,
+        medium_epss_threshold=medium_epss_threshold,
+        medium_cvss_threshold=medium_cvss_threshold,
+    )
     attack_enabled = bool(not no_attack and offline_attack_file is not None)
     findings, counts, enrichment = _build_findings(
         [normalized_cve],
+        policy=policy,
         attack_enabled=attack_enabled,
         offline_kev_file=offline_kev_file,
         offline_attack_file=offline_attack_file,
@@ -242,6 +287,7 @@ def explain(
     kev = enrichment.kev.get(normalized_cve, KevData(cve_id=normalized_cve, in_kev=False))
     attack = enrichment.attack.get(normalized_cve, AttackData(cve_id=normalized_cve))
     warnings = enrichment.warnings
+    comparison = PrioritizationService(policy=policy).build_comparison([finding])[0]
 
     context = AnalysisContext(
         input_path=f"inline:{normalized_cve}",
@@ -249,6 +295,9 @@ def explain(
         output_format=format.value,
         generated_at=iso_utc_now(),
         attack_enabled=attack_enabled,
+        attack_mapping_file=(
+            str(offline_attack_file) if attack_enabled and offline_attack_file else None
+        ),
         warnings=warnings,
         total_input=1,
         valid_input=1,
@@ -257,24 +306,44 @@ def explain(
         nvd_hits=_count_nvd_hits(enrichment),
         epss_hits=_count_epss_hits(enrichment),
         kev_hits=_count_kev_hits(enrichment),
+        attack_hits=_count_attack_hits(enrichment),
+        policy_overrides=policy.override_descriptions(),
+        priority_policy=policy,
         counts_by_priority=counts,
         data_sources=DATA_SOURCES,
         cache_enabled=not no_cache,
         cache_dir=str(cache_dir) if not no_cache else None,
     )
 
-    console.print(render_explain_view(finding, nvd, epss, kev, attack))
+    console.print(render_explain_view(finding, nvd, epss, kev, attack, comparison))
     _print_warnings(warnings)
 
     if output is not None:
         if format == OutputFormat.markdown:
             write_output(
-                output, generate_explain_markdown(finding, nvd, epss, kev, attack, context)
+                output,
+                generate_explain_markdown(
+                    finding,
+                    nvd,
+                    epss,
+                    kev,
+                    attack,
+                    context,
+                    comparison,
+                ),
             )
         elif format == OutputFormat.json:
             write_output(
                 output,
-                generate_explain_json(finding, nvd, epss, kev, attack, context),
+                generate_explain_json(
+                    finding,
+                    nvd,
+                    epss,
+                    kev,
+                    attack,
+                    context,
+                    comparison,
+                ),
             )
         console.print(f"[green]Wrote {format.value} output to {output}[/green]")
 
@@ -290,6 +359,7 @@ def _prepare_analysis(
     min_cvss: float | None,
     min_epss: float | None,
     sort_by: SortBy,
+    policy: PriorityPolicy,
     max_cves: int | None,
     offline_kev_file: Path | None,
     offline_attack_file: Path | None,
@@ -302,13 +372,14 @@ def _prepare_analysis(
 
     try:
         items, parser_warnings, total_input_rows = parse_input_file(input_path, max_cves=max_cves)
-    except ValueError as exc:
+    except ValidationError as exc:
         console.print(f"[red]Input validation failed:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
     cve_ids = [item.cve_id for item in items]
     all_findings, _, enrichment = _build_findings(
         cve_ids,
+        policy=policy,
         attack_enabled=attack_enabled,
         offline_kev_file=offline_kev_file,
         offline_attack_file=offline_attack_file,
@@ -322,7 +393,7 @@ def _prepare_analysis(
         console.print("[red]No findings could be generated from the provided CVEs.[/red]")
         raise typer.Exit(code=1)
 
-    prioritizer = PrioritizationService()
+    prioritizer = PrioritizationService(policy=policy)
     normalized_priority_filters = _normalize_priority_filters(priority_filters)
     filtered_findings = prioritizer.filter_findings(
         all_findings,
@@ -340,6 +411,9 @@ def _prepare_analysis(
         output_format=format.value,
         generated_at=iso_utc_now(),
         attack_enabled=attack_enabled,
+        attack_mapping_file=(
+            str(offline_attack_file) if attack_enabled and offline_attack_file else None
+        ),
         warnings=warnings,
         total_input=total_input_rows,
         valid_input=len(cve_ids),
@@ -348,12 +422,15 @@ def _prepare_analysis(
         nvd_hits=_count_nvd_hits(enrichment),
         epss_hits=_count_epss_hits(enrichment),
         kev_hits=_count_kev_hits(enrichment),
+        attack_hits=_count_attack_hits(enrichment),
         active_filters=_build_active_filters(
             priority_filters=priority_filters,
             kev_only=kev_only,
             min_cvss=min_cvss,
             min_epss=min_epss,
         ),
+        policy_overrides=policy.override_descriptions(),
+        priority_policy=policy,
         counts_by_priority=prioritizer.count_by_priority(findings),
         data_sources=DATA_SOURCES,
         cache_enabled=not no_cache,
@@ -366,6 +443,7 @@ def _prepare_analysis(
 def _build_findings(
     cve_ids: list[str],
     *,
+    policy: PriorityPolicy,
     attack_enabled: bool,
     offline_kev_file: Path | None,
     offline_attack_file: Path | None,
@@ -387,7 +465,7 @@ def _build_findings(
         offline_attack_file=offline_attack_file,
     )
 
-    prioritizer = PrioritizationService()
+    prioritizer = PrioritizationService(policy=policy)
     findings, counts = prioritizer.prioritize(
         cve_ids,
         nvd_data=enrichment.nvd,
@@ -439,6 +517,29 @@ def _build_active_filters(
     return active_filters
 
 
+def _build_priority_policy(
+    *,
+    critical_epss_threshold: float,
+    critical_cvss_threshold: float,
+    high_epss_threshold: float,
+    high_cvss_threshold: float,
+    medium_epss_threshold: float,
+    medium_cvss_threshold: float,
+) -> PriorityPolicy:
+    try:
+        return PriorityPolicy(
+            critical_epss_threshold=critical_epss_threshold,
+            critical_cvss_threshold=critical_cvss_threshold,
+            high_epss_threshold=high_epss_threshold,
+            high_cvss_threshold=high_cvss_threshold,
+            medium_epss_threshold=medium_epss_threshold,
+            medium_cvss_threshold=medium_cvss_threshold,
+        )
+    except ValueError as exc:
+        console.print(f"[red]Input validation failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
 def _count_nvd_hits(enrichment: EnrichmentResult) -> int:
     return sum(1 for item in enrichment.nvd.values() if _has_nvd_content(item))
 
@@ -453,6 +554,14 @@ def _count_epss_hits(enrichment: EnrichmentResult) -> int:
 
 def _count_kev_hits(enrichment: EnrichmentResult) -> int:
     return sum(1 for item in enrichment.kev.values() if item.in_kev)
+
+
+def _count_attack_hits(enrichment: EnrichmentResult) -> int:
+    return sum(
+        1
+        for item in enrichment.attack.values()
+        if item.attack_techniques or item.attack_tactics or item.attack_note
+    )
 
 
 def _has_nvd_content(item: NvdData) -> bool:

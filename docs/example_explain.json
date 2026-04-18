@@ -1,9 +1,29 @@
 {
   "attack": {
-    "attack_note": null,
-    "attack_tactics": [],
-    "attack_techniques": [],
+    "attack_note": "Representative local mapping for remote service exposure impact.",
+    "attack_tactics": [
+      "Initial Access"
+    ],
+    "attack_techniques": [
+      "T1190"
+    ],
     "cve_id": "CVE-2021-44228"
+  },
+  "comparison": {
+    "change_reason": "CVSS and enrichment both support the same Critical outcome.",
+    "changed": false,
+    "cve_id": "CVE-2021-44228",
+    "cvss_base_score": 10.0,
+    "cvss_only_label": "Critical",
+    "cvss_only_rank": 1,
+    "cvss_severity": "CRITICAL",
+    "delta_rank": 0,
+    "description": "Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases 2.12.2, 2.12.3, and 2.3.1) JNDI features used in configuration, log messages, and parameters do not protect against attacker controlled LDAP and other JNDI related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled. From log4j 2.15.0, this behavior has been disabled by default. From version 2.16.0 (along with 2.12.2, 2.12.3, and 2.3.1), this functionality has been completely removed. Note that this vulnerability is specific to log4j-core and does not affect log4net, log4cxx, or other Apache Logging Services projects.",
+    "enriched_label": "Critical",
+    "enriched_rank": 1,
+    "epss": 0.94358,
+    "epss_percentile": 0.99962,
+    "in_kev": true
   },
   "epss": {
     "cve_id": "CVE-2021-44228",
@@ -12,7 +32,13 @@
     "percentile": 0.99962
   },
   "finding": {
-    "attack_techniques": [],
+    "attack_note": "Representative local mapping for remote service exposure impact.",
+    "attack_tactics": [
+      "Initial Access"
+    ],
+    "attack_techniques": [
+      "T1190"
+    ],
     "cve_id": "CVE-2021-44228",
     "cvss_base_score": 10.0,
     "cvss_severity": "CRITICAL",
@@ -22,7 +48,7 @@
     "in_kev": true,
     "priority_label": "Critical",
     "priority_rank": 1,
-    "rationale": "CISA KEV lists this CVE as known exploited in the wild. NVD reports CVSS 10.0 (CRITICAL). FIRST EPSS is 0.944 (percentile 1.000).",
+    "rationale": "CISA KEV lists this CVE as known exploited in the wild. NVD reports CVSS 10.0 (CRITICAL). FIRST EPSS is 0.944 (percentile 1.000). Optional ATT&CK context is available for: T1190. ATT&CK mapping note: Representative local mapping for remote service exposure impact.",
     "recommended_action": "Patch or mitigate immediately, validate exposure, strengthen detection coverage, and escalate potential business impact."
   },
   "kev": {
@@ -36,7 +62,9 @@
   },
   "metadata": {
     "active_filters": [],
-    "attack_enabled": false,
+    "attack_enabled": true,
+    "attack_hits": 1,
+    "attack_mapping_file": "data/optional_attack_to_cve.csv",
     "cache_dir": ".cache/vuln-prioritizer",
     "cache_enabled": true,
     "counts_by_priority": {
@@ -50,12 +78,21 @@
     "epss_hits": 1,
     "filtered_out_count": 0,
     "findings_count": 1,
-    "generated_at": "2026-04-18T15:14:14+00:00",
+    "generated_at": "2026-04-18T15:28:28+00:00",
     "input_path": "inline:CVE-2021-44228",
     "kev_hits": 1,
     "nvd_hits": 1,
     "output_format": "json",
     "output_path": "docs/example_explain.json",
+    "policy_overrides": [],
+    "priority_policy": {
+      "critical_cvss_threshold": 7.0,
+      "critical_epss_threshold": 0.7,
+      "high_cvss_threshold": 9.0,
+      "high_epss_threshold": 0.4,
+      "medium_cvss_threshold": 7.0,
+      "medium_epss_threshold": 0.1
+    },
     "total_input": 1,
     "valid_input": 1,
     "warnings": []
