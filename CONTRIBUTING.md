@@ -45,5 +45,6 @@ make demo-explain
 
 - Keep commits focused.
 - Update tests with behavioral changes.
+- Update `CHANGELOG.md` for user-visible or maintainer-relevant changes when appropriate.
 - Do not commit local secrets or local handoff notes.
 - Prefer deterministic mocks in tests over live network calls.

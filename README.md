@@ -1,8 +1,25 @@
 # vuln-prioritizer
 
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Status: MVP](https://img.shields.io/badge/status-MVP-orange)](#roadmap)
+[![Quality: local-first](https://img.shields.io/badge/quality-local--first-informational)](#development)
+
 `vuln-prioritizer` is a small Python CLI for prioritizing known vulnerabilities. It reads CVE lists, enriches them with NVD, EPSS, and CISA KEV data, and produces a transparent ranking for operational remediation decisions.
 
-## Project Idea
+## Why This Project Exists
+
+Vulnerability queues are usually larger than the time and staffing available to resolve them. Teams often need to decide what to patch now, what to mitigate next, and what to watch closely.
+
+CVSS alone is not enough for that decision:
+
+- severity is not the same as exploitation likelihood
+- a widely exploited issue can matter more than a theoretically severe one
+- prioritization needs to be explainable to both engineers and decision-makers
+
+`vuln-prioritizer` exists to make that decision process smaller, clearer, and easier to defend. It turns a plain CVE list into a transparent, operationally useful ranking using public data sources.
+
+## Project Overview
 
 Many teams still prioritize vulnerabilities primarily by CVSS. That is useful, but often incomplete for day-to-day decision-making:
 
@@ -73,6 +90,15 @@ make demo-report
 make demo-explain
 make precommit-install
 ```
+
+## Highlights
+
+- focused CLI for prioritizing known CVEs
+- official/public data sources only
+- deterministic priority rules with documented rationale
+- Markdown and JSON outputs for reporting and reuse
+- optional local ATT&CK mapping without unsafe heuristics
+- local-first quality gates for environments where CI usage is limited
 
 To enable automatic local hooks with `pre-commit`:
 
@@ -206,6 +232,7 @@ The cache is optional and can be disabled with `--no-cache`.
 
 The repository already includes the core maintainer files needed for a future public release:
 
+- [CHANGELOG.md](CHANGELOG.md)
 - [LICENSE](LICENSE)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [SECURITY.md](SECURITY.md)
