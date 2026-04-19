@@ -11,6 +11,20 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 - Maintained local-first validation as the primary development path while keeping release metadata and CI aligned with the codebase.
 
+## [0.2.2] - 2026-04-19
+
+### Added
+
+- `CODE_OF_CONDUCT.md` and `.editorconfig` for stronger public-repository maintenance defaults.
+- Direct cache tests covering round-trip, expiry, and invalid-cache-file handling.
+- A `py.typed` package marker so typed-package consumers can rely on shipped inline type information.
+
+### Changed
+
+- Upgraded packaging metadata with classifiers, project URLs, and contributor-oriented author metadata.
+- Switched package licensing metadata to SPDX-style fields for cleaner modern builds.
+- Switched local packaging verification from wheel-only builds to source-and-wheel builds plus `twine check`.
+
 ## [0.2.1] - 2026-04-18
 
 ### Added

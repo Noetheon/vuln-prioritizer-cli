@@ -78,7 +78,7 @@
     "epss_hits": 1,
     "filtered_out_count": 0,
     "findings_count": 1,
-    "generated_at": "2026-04-18T15:33:42+00:00",
+    "generated_at": "2026-04-19T08:21:47+00:00",
     "input_path": "inline:CVE-2021-44228",
     "kev_hits": 1,
     "nvd_hits": 1,

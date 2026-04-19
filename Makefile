@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: install test lint format typecheck check package release-check demo-report demo-compare demo-explain precommit-install
+.PHONY: install test lint format typecheck check package package-check release-check demo-report demo-compare demo-explain precommit-install
 
 install:
 	$(PYTHON) -m pip install -e .[dev]
@@ -25,14 +25,17 @@ check:
 
 package:
 	rm -rf dist
-	$(PYTHON) -m pip wheel --no-deps . -w dist
+	$(PYTHON) -m build
+
+package-check: package
+	$(PYTHON) -m twine check dist/*
 
 release-check:
 	$(MAKE) check
 	$(MAKE) demo-report
 	$(MAKE) demo-compare
 	$(MAKE) demo-explain
-	$(MAKE) package
+	$(MAKE) package-check
 
 demo-report:
 	PYTHONPATH=src $(PYTHON) -m vuln_prioritizer.cli analyze --input data/sample_cves.txt --output docs/example_report.md --format markdown

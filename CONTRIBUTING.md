@@ -48,6 +48,12 @@ For a full release-oriented local sweep:
 make release-check
 ```
 
+To validate only the generated distribution artifacts and package metadata:
+
+```bash
+make package-check
+```
+
 ## Commit Discipline
 
 - Keep commits focused.

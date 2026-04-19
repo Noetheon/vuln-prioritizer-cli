@@ -87,6 +87,7 @@ make format
 make test
 make typecheck
 make package
+make package-check
 make release-check
 make demo-report
 make demo-compare
@@ -102,7 +103,7 @@ For release candidates or public-release preparation, use:
 make release-check
 ```
 
-This runs the local quality gate, regenerates demo artifacts, and builds a wheel under `dist/`.
+This runs the local quality gate, regenerates demo artifacts, builds source and wheel distributions under `dist/`, and validates the generated package metadata locally.
 
 ## Highlights
 
@@ -314,9 +315,12 @@ The repository already includes the core maintainer files needed for a future pu
 - [CHANGELOG.md](CHANGELOG.md)
 - [LICENSE](LICENSE)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - [SECURITY.md](SECURITY.md)
 
 The quality workflow is local-first by design. The included GitHub Actions workflow simply mirrors `make check` so local and hosted validation stay aligned.
+
+The published package metadata is also set up for a later public release, including project URLs, classifiers, and a `py.typed` marker for typed-package consumers.
 
 ## Roadmap
 
