@@ -36,6 +36,8 @@ Supporting docs:
 - [docs/methodology.md](./methodology.md)
 - [docs/executive_summary.md](./executive_summary.md)
 - [docs/evidence/current_state_audit.md](./evidence/current_state_audit.md)
+- [docs/evidence/final_submission_checklist.md](./evidence/final_submission_checklist.md)
+- [docs/evidence/screenshot_capture_list.md](./evidence/screenshot_capture_list.md)
 - [docs/reference_cve_prioritizer_gap_analysis.md](./reference_cve_prioritizer_gap_analysis.md)
 
 ## Recommended Evidence Collection
