@@ -35,12 +35,14 @@ class KevProvider:
         self,
         cve_ids: list[str],
         offline_file: Path | None = None,
+        *,
+        refresh: bool = False,
     ) -> tuple[dict[str, KevData], list[str]]:
         """Load KEV data and return membership metadata for the requested CVEs."""
         warnings: list[str] = []
 
         try:
-            index = self._load_index(offline_file)
+            index = self._load_index(offline_file, refresh=refresh)
         except Exception as exc:  # noqa: BLE001
             warnings.append(f"KEV catalog load failed: {exc}")
             index = {}
@@ -50,11 +52,16 @@ class KevProvider:
             results[cve_id] = index.get(cve_id, KevData(cve_id=cve_id, in_kev=False))
         return results, warnings
 
-    def _load_index(self, offline_file: Path | None) -> dict[str, KevData]:
+    def _load_index(
+        self, offline_file: Path | None, *, refresh: bool = False
+    ) -> dict[str, KevData]:
         if offline_file is not None:
-            return self._load_offline_file(offline_file)
+            index = self._load_offline_file(offline_file)
+            if refresh:
+                self._store_in_cache(index)
+            return index
 
-        cached_index = self._load_from_cache()
+        cached_index = None if refresh else self._load_from_cache()
         if cached_index is not None:
             return cached_index
 

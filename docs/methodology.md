@@ -146,7 +146,15 @@ These commands work from local ATT&CK files and do not require NVD/EPSS/KEV.
 - NVD and EPSS are cached per CVE
 - the online KEV catalog is cached as an indexed dataset
 - ATT&CK local files are read directly from disk
-- `data status` exposes cache timestamps and local ATT&CK version metadata
+- `data status` exposes cache timestamps, namespace counts, checksums, and local ATT&CK version metadata
+- `data update` is the explicit cache refresh path for NVD, EPSS, and KEV
+- `data verify` checks namespace integrity, requested-CVE cache coverage, and pinned local file checksums
+
+Important boundary:
+
+- this remains cache transparency, not a full offline mirror of NVD or EPSS
+- NVD and EPSS refresh only the requested CVE set
+- KEV refreshes the indexed online catalog or an optional pinned local file
 
 ## Limitations
 

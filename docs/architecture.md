@@ -46,6 +46,8 @@ Current public command groups:
 - `attack coverage`
 - `attack navigator-layer`
 - `data status`
+- `data update`
+- `data verify`
 - `report html`
 
 The CLI owns flag parsing, validation, cache wiring, and output-mode dispatch. It does not contain parser-specific logic beyond compatibility routing.
@@ -151,7 +153,19 @@ Terminal tables, panels, warning phrasing, and Markdown table layout are intenti
 
 ## Cache and live data
 
-NVD, EPSS, and KEV remain live/cache-backed data sources. `data status` exposes cache timestamps and local ATT&CK metadata, but it is an inspection command, not a data-update workflow.
+NVD, EPSS, and KEV remain live/cache-backed data sources.
+
+The current `data` command tree is intentionally small:
+
+- `data status` inspects namespace counts, timestamps, and local ATT&CK metadata
+- `data update` refreshes NVD/EPSS per-CVE cache entries and the cached KEV catalog
+- `data verify` inspects cache coverage, namespace checksums, and pinned local file checksums
+
+Important boundary:
+
+- `data update` is cache-oriented, not a full mirror or snapshot framework for upstream feeds
+- NVD and EPSS updates are still scoped to the requested CVE set, not to the whole upstream corpus
+- ATT&CK remains local-file based and is verified from disk rather than refreshed from a remote feed
 
 For reproducible automation, prefer:
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from enum import Enum
 from pathlib import Path
@@ -44,6 +45,9 @@ from vuln_prioritizer.models import (
 from vuln_prioritizer.providers.attack import AttackProvider
 from vuln_prioritizer.providers.attack_metadata import AttackMetadataProvider
 from vuln_prioritizer.providers.ctid_mappings import CtidMappingsProvider
+from vuln_prioritizer.providers.epss import EpssProvider
+from vuln_prioritizer.providers.kev import KevProvider
+from vuln_prioritizer.providers.nvd import NvdProvider
 from vuln_prioritizer.reporter import (
     generate_compare_json,
     generate_compare_markdown,
@@ -120,6 +124,13 @@ class PolicyProfile(str, Enum):
     default = "default"
     enterprise = "enterprise"
     conservative = "conservative"
+
+
+class DataSourceName(str, Enum):
+    all = "all"
+    nvd = "nvd"
+    epss = "epss"
+    kev = "kev"
 
 
 class TargetKind(str, Enum):
@@ -703,30 +714,258 @@ def data_status(
 ) -> None:
     """Show cache status and local metadata versions."""
     cache = FileCache(cache_dir, cache_ttl_hours)
-    lines = [
-        f"Cache directory: {cache_dir}",
-        f"Cache TTL (hours): {cache_ttl_hours}",
-        f"NVD latest cached at: {cache.latest_cached_at('nvd') or 'N.A.'}",
-        f"EPSS latest cached at: {cache.latest_cached_at('epss') or 'N.A.'}",
-        f"KEV latest cached at: {cache.latest_cached_at('kev') or 'N.A.'}",
-        f"KEV mode: {'offline file' if offline_kev_file else 'live/cache'}",
-    ]
+    console.print(
+        Panel(
+            "\n".join(
+                [
+                    f"Cache directory: {cache_dir}",
+                    f"Cache TTL (hours): {cache_ttl_hours}",
+                    f"KEV mode: {'offline file' if offline_kev_file else 'live/cache'}",
+                ]
+            ),
+            title="Data Status",
+        )
+    )
+    console.print(
+        _render_cache_namespace_table(
+            [
+                cache.inspect_namespace("nvd"),
+                cache.inspect_namespace("epss"),
+                cache.inspect_namespace("kev"),
+            ]
+        )
+    )
     if attack_mapping_file is not None:
-        validation = _validate_attack_inputs(
+        validation = _validate_attack_inputs_or_exit(
             attack_source=AttackSource.ctid_json.value,
             attack_mapping_file=attack_mapping_file,
             attack_technique_metadata_file=attack_technique_metadata_file,
         )
-        lines.extend(
-            [
-                f"ATT&CK source: {validation['source']}",
-                f"ATT&CK mapping file: {validation['mapping_file']}",
-                f"ATT&CK source version: {validation['source_version'] or 'N.A.'}",
-                f"ATT&CK version: {validation['attack_version'] or 'N.A.'}",
-                f"ATT&CK domain: {validation['domain'] or 'N.A.'}",
-            ]
+        console.print(
+            Panel(
+                "\n".join(
+                    [
+                        f"ATT&CK source: {validation['source']}",
+                        f"ATT&CK mapping file: {validation['mapping_file']}",
+                        "ATT&CK mapping SHA256: "
+                        + (_sha256_file(attack_mapping_file) if attack_mapping_file else "N.A."),
+                        f"ATT&CK source version: {validation['source_version'] or 'N.A.'}",
+                        f"ATT&CK version: {validation['attack_version'] or 'N.A.'}",
+                        f"ATT&CK domain: {validation['domain'] or 'N.A.'}",
+                    ]
+                ),
+                title="ATT&CK Metadata",
+            )
         )
-    console.print(Panel("\n".join(lines), title="Data Status"))
+        _print_warnings(validation["warnings"])
+
+
+@data_app.command("update")
+def data_update(
+    source: list[DataSourceName] | None = typer.Option(None, "--source"),
+    input: Path | None = typer.Option(None, "--input", exists=True, dir_okay=False, readable=True),
+    input_format: InputFormat = typer.Option(InputFormat.auto, "--input-format"),
+    cve: list[str] | None = typer.Option(None, "--cve"),
+    max_cves: int | None = typer.Option(None, "--max-cves", min=1),
+    cache_dir: Path = typer.Option(
+        DEFAULT_CACHE_DIR, "--cache-dir", file_okay=False, dir_okay=True
+    ),
+    cache_ttl_hours: int = typer.Option(DEFAULT_CACHE_TTL_HOURS, "--cache-ttl-hours", min=1),
+    offline_kev_file: Path | None = typer.Option(None, "--offline-kev-file", dir_okay=False),
+    nvd_api_key_env: str = typer.Option(DEFAULT_NVD_API_KEY_ENV, "--nvd-api-key-env"),
+) -> None:
+    """Refresh cached live-source data for requested CVEs or the KEV catalog."""
+    load_dotenv()
+    selected_sources = _resolve_data_sources(source)
+    requires_cves = _data_sources_require_cves(selected_sources)
+    cve_ids, input_warnings = _load_data_command_cves_or_exit(
+        input_path=input,
+        input_format=input_format.value,
+        inline_cves=cve or [],
+        max_cves=max_cves,
+        required=requires_cves,
+    )
+    cache = FileCache(cache_dir, cache_ttl_hours)
+
+    rows: list[dict[str, str | int | None]] = []
+    warnings = list(input_warnings)
+    if "nvd" in selected_sources:
+        nvd_results, provider_warnings = NvdProvider.from_env(
+            api_key_env=nvd_api_key_env,
+            cache=cache,
+        ).fetch_many(cve_ids, refresh=True)
+        warnings.extend(provider_warnings)
+        rows.append(
+            {
+                "source": "NVD",
+                "mode": "live/api",
+                "requested": len(cve_ids),
+                "records": sum(1 for item in nvd_results.values() if _has_nvd_content(item)),
+                "latest_cached_at": cache.latest_cached_at("nvd") or "N.A.",
+                "details": "Per-CVE records refreshed from the NVD CVE API cache namespace.",
+            }
+        )
+    if "epss" in selected_sources:
+        epss_results, provider_warnings = EpssProvider(cache=cache).fetch_many(
+            cve_ids, refresh=True
+        )
+        warnings.extend(provider_warnings)
+        rows.append(
+            {
+                "source": "EPSS",
+                "mode": "live/api",
+                "requested": len(cve_ids),
+                "records": sum(
+                    1
+                    for item in epss_results.values()
+                    if item.epss is not None or item.percentile is not None or item.date is not None
+                ),
+                "latest_cached_at": cache.latest_cached_at("epss") or "N.A.",
+                "details": (
+                    "Per-CVE EPSS records refreshed from the FIRST EPSS API cache namespace."
+                ),
+            }
+        )
+    if "kev" in selected_sources:
+        _, provider_warnings = KevProvider(cache=cache).fetch_many(
+            cve_ids,
+            offline_file=offline_kev_file,
+            refresh=True,
+        )
+        warnings.extend(provider_warnings)
+        cached_catalog = cache.get_json("kev", "catalog") or {}
+        rows.append(
+            {
+                "source": "KEV",
+                "mode": "offline file" if offline_kev_file else "live/catalog",
+                "requested": len(cve_ids),
+                "records": len(cached_catalog) if isinstance(cached_catalog, dict) else 0,
+                "latest_cached_at": cache.latest_cached_at("kev") or "N.A.",
+                "details": "Catalog namespace refreshed and indexed for cached KEV lookups.",
+            }
+        )
+
+    console.print(
+        Panel(
+            "\n".join(
+                [
+                    "Selected sources: " + ", ".join(selected_sources),
+                    f"Cache directory: {cache_dir}",
+                    f"Cache TTL (hours): {cache_ttl_hours}",
+                    f"Requested CVEs: {len(cve_ids)}",
+                ]
+            ),
+            title="Data Update",
+        )
+    )
+    console.print(_render_data_update_table(rows))
+    _print_warnings(warnings)
+
+
+@data_app.command("verify")
+def data_verify(
+    input: Path | None = typer.Option(None, "--input", exists=True, dir_okay=False, readable=True),
+    input_format: InputFormat = typer.Option(InputFormat.auto, "--input-format"),
+    cve: list[str] | None = typer.Option(None, "--cve"),
+    max_cves: int | None = typer.Option(None, "--max-cves", min=1),
+    cache_dir: Path = typer.Option(
+        DEFAULT_CACHE_DIR, "--cache-dir", file_okay=False, dir_okay=True
+    ),
+    cache_ttl_hours: int = typer.Option(DEFAULT_CACHE_TTL_HOURS, "--cache-ttl-hours", min=1),
+    offline_kev_file: Path | None = typer.Option(None, "--offline-kev-file", dir_okay=False),
+    attack_mapping_file: Path | None = typer.Option(None, "--attack-mapping-file", dir_okay=False),
+    attack_technique_metadata_file: Path | None = typer.Option(
+        None, "--attack-technique-metadata-file", dir_okay=False
+    ),
+) -> None:
+    """Verify cache integrity, cache coverage, and local file checksums."""
+    cache = FileCache(cache_dir, cache_ttl_hours)
+    cve_ids, input_warnings = _load_data_command_cves_or_exit(
+        input_path=input,
+        input_format=input_format.value,
+        inline_cves=cve or [],
+        max_cves=max_cves,
+        required=False,
+    )
+    statuses = [
+        cache.inspect_namespace("nvd"),
+        cache.inspect_namespace("epss"),
+        cache.inspect_namespace("kev"),
+    ]
+
+    console.print(
+        Panel(
+            "\n".join(
+                [
+                    f"Cache directory: {cache_dir}",
+                    f"Cache TTL (hours): {cache_ttl_hours}",
+                    f"Requested CVEs for coverage check: {len(cve_ids)}",
+                    f"KEV mode: {'offline file' if offline_kev_file else 'live/cache'}",
+                ]
+            ),
+            title="Data Verify",
+        )
+    )
+    console.print(_render_cache_namespace_table(statuses))
+    if cve_ids:
+        console.print(_render_cache_coverage_table(cache, cve_ids))
+
+    if offline_kev_file is not None:
+        console.print(
+            _render_local_file_table(
+                [
+                    {
+                        "label": "Offline KEV file",
+                        "path": str(offline_kev_file),
+                        "sha256": _sha256_file(offline_kev_file),
+                        "size_bytes": offline_kev_file.stat().st_size,
+                    }
+                ],
+                title="Pinned Local Files",
+            )
+        )
+    if attack_mapping_file is not None:
+        validation = _validate_attack_inputs_or_exit(
+            attack_source=AttackSource.ctid_json.value,
+            attack_mapping_file=attack_mapping_file,
+            attack_technique_metadata_file=attack_technique_metadata_file,
+        )
+        file_rows: list[dict[str, str | int]] = [
+            {
+                "label": "ATT&CK mapping file",
+                "path": str(attack_mapping_file),
+                "sha256": _sha256_file(attack_mapping_file),
+                "size_bytes": attack_mapping_file.stat().st_size,
+            }
+        ]
+        if attack_technique_metadata_file is not None:
+            file_rows.append(
+                {
+                    "label": "ATT&CK metadata file",
+                    "path": str(attack_technique_metadata_file),
+                    "sha256": _sha256_file(attack_technique_metadata_file),
+                    "size_bytes": attack_technique_metadata_file.stat().st_size,
+                }
+            )
+        console.print(_render_local_file_table(file_rows, title="Pinned Local Files"))
+        console.print(
+            Panel(
+                "\n".join(
+                    [
+                        f"ATT&CK source: {validation['source']}",
+                        f"Source version: {validation['source_version'] or 'N.A.'}",
+                        f"ATT&CK version: {validation['attack_version'] or 'N.A.'}",
+                        f"Domain: {validation['domain'] or 'N.A.'}",
+                        f"Unique CVEs in mapping: {validation['unique_cves']}",
+                        f"Total mapping objects: {validation['mapping_count']}",
+                        f"Technique metadata entries: {validation['technique_count']}",
+                    ]
+                ),
+                title="ATT&CK Verification",
+            )
+        )
+        input_warnings.extend(validation["warnings"])
+    _print_warnings(input_warnings)
 
 
 @report_app.command("html")
@@ -1123,6 +1362,176 @@ def _print_warnings(warnings: list[str]) -> None:
                 border_style="yellow",
             )
         )
+
+
+def _resolve_data_sources(sources: list[DataSourceName] | None) -> list[str]:
+    ordered: list[str] = []
+    requested = sources or [DataSourceName.all]
+    for source in requested:
+        expanded = ["nvd", "epss", "kev"] if source == DataSourceName.all else [source.value]
+        for item in expanded:
+            if item not in ordered:
+                ordered.append(item)
+    return ordered
+
+
+def _data_sources_require_cves(sources: list[str]) -> bool:
+    return any(item in {"nvd", "epss"} for item in sources)
+
+
+def _load_data_command_cves_or_exit(
+    *,
+    input_path: Path | None,
+    input_format: str,
+    inline_cves: list[str],
+    max_cves: int | None,
+    required: bool,
+) -> tuple[list[str], list[str]]:
+    cve_ids: list[str] = []
+    warnings: list[str] = []
+
+    if input_path is not None:
+        try:
+            parsed_input = InputLoader().load(
+                input_path, input_format=input_format, max_cves=max_cves
+            )
+        except ValidationError as exc:
+            console.print(f"[red]Input validation failed:[/red] {exc}")
+            raise typer.Exit(code=2) from exc
+        except ValueError as exc:
+            console.print(f"[red]Input validation failed:[/red] {exc}")
+            raise typer.Exit(code=2) from exc
+        cve_ids.extend(parsed_input.unique_cves)
+        warnings.extend(parsed_input.warnings)
+
+    for raw_cve in inline_cves:
+        normalized = normalize_cve_id(raw_cve)
+        if normalized is None:
+            warnings.append(f"Ignored invalid CVE identifier: {raw_cve!r}")
+            continue
+        if normalized not in cve_ids:
+            cve_ids.append(normalized)
+
+    if max_cves is not None and len(cve_ids) > max_cves:
+        warnings.append(f"Truncated data-source verification input to the first {max_cves} CVEs.")
+        cve_ids = cve_ids[:max_cves]
+
+    if required and not cve_ids:
+        console.print(
+            "[red]Input validation failed:[/red] "
+            "NVD and EPSS cache refresh requires --input or at least one --cve."
+        )
+        raise typer.Exit(code=2)
+
+    return cve_ids, warnings
+
+
+def _render_cache_namespace_table(statuses: list[dict[str, object]]) -> Table:
+    table = Table(title="Cache Namespaces", show_lines=False)
+    table.add_column("Source", style="bold")
+    table.add_column("Files")
+    table.add_column("Valid")
+    table.add_column("Expired")
+    table.add_column("Invalid")
+    table.add_column("Latest Cached At")
+    table.add_column("Namespace SHA256")
+
+    labels = {"nvd": "NVD", "epss": "EPSS", "kev": "KEV"}
+    for status in statuses:
+        namespace = str(status["namespace"])
+        table.add_row(
+            labels.get(namespace, namespace.upper()),
+            str(status["file_count"]),
+            str(status["valid_count"]),
+            str(status["expired_count"]),
+            str(status["invalid_count"]),
+            str(status["latest_cached_at"] or "N.A."),
+            str(status["namespace_checksum"] or "N.A."),
+        )
+    return table
+
+
+def _render_data_update_table(rows: list[dict[str, str | int | None]]) -> Table:
+    table = Table(title="Updated Sources", show_lines=False)
+    table.add_column("Source", style="bold")
+    table.add_column("Mode")
+    table.add_column("Requested CVEs")
+    table.add_column("Cached Records")
+    table.add_column("Latest Cached At")
+    table.add_column("Details")
+
+    for row in rows:
+        table.add_row(
+            str(row["source"]),
+            str(row["mode"]),
+            str(row["requested"]),
+            str(row["records"]),
+            str(row["latest_cached_at"]),
+            str(row["details"]),
+        )
+    return table
+
+
+def _render_cache_coverage_table(cache: FileCache, cve_ids: list[str]) -> Table:
+    table = Table(title="Cache Coverage", show_lines=False)
+    table.add_column("Source", style="bold")
+    table.add_column("Cached Coverage")
+    table.add_column("Details")
+
+    nvd_hits = sum(1 for cve_id in cve_ids if cache.get_json("nvd", cve_id) is not None)
+    epss_hits = sum(1 for cve_id in cve_ids if cache.get_json("epss", cve_id) is not None)
+    kev_payload = cache.get_json("kev", "catalog")
+    kev_catalog = kev_payload if isinstance(kev_payload, dict) else {}
+    kev_hits = sum(1 for cve_id in cve_ids if cve_id in kev_catalog)
+
+    table.add_row("NVD", f"{nvd_hits}/{len(cve_ids)}", "Fresh per-CVE cache entries available.")
+    table.add_row("EPSS", f"{epss_hits}/{len(cve_ids)}", "Fresh per-CVE cache entries available.")
+    table.add_row(
+        "KEV",
+        f"{kev_hits}/{len(cve_ids)}",
+        "Coverage derived from the cached KEV catalog index.",
+    )
+    return table
+
+
+def _render_local_file_table(rows: list[dict[str, str | int]], *, title: str) -> Table:
+    table = Table(title=title, show_lines=False)
+    table.add_column("Label", style="bold")
+    table.add_column("Path")
+    table.add_column("Size (bytes)")
+    table.add_column("SHA256")
+
+    for row in rows:
+        table.add_row(
+            str(row["label"]),
+            str(row["path"]),
+            str(row["size_bytes"]),
+            str(row["sha256"]),
+        )
+    return table
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def _validate_attack_inputs_or_exit(
+    *,
+    attack_source: str,
+    attack_mapping_file: Path,
+    attack_technique_metadata_file: Path | None,
+) -> dict:
+    try:
+        return _validate_attack_inputs(
+            attack_source=attack_source,
+            attack_mapping_file=attack_mapping_file,
+            attack_technique_metadata_file=attack_technique_metadata_file,
+        )
+    except (OSError, ValidationError, ValueError) as exc:
+        console.print(f"[red]Input validation failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
 
 
 def _validate_attack_inputs(

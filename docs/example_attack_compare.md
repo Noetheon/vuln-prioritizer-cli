@@ -1,7 +1,7 @@
 # Vulnerability Priority Comparison Report
 
 ## Run Metadata
-- Generated at: `2026-04-20T18:15:20+00:00`
+- Generated at: `2026-04-20T18:45:40+00:00`
 - Input file: `data/sample_cves_mixed.txt`
 - Output format: `markdown`
 - ATT&CK context enabled: `yes`

@@ -44,14 +44,19 @@ class NvdProvider:
     ) -> NvdProvider:
         return cls(session=session, api_key=os.getenv(api_key_env), cache=cache)
 
-    def fetch_many(self, cve_ids: list[str]) -> tuple[dict[str, NvdData], list[str]]:
+    def fetch_many(
+        self,
+        cve_ids: list[str],
+        *,
+        refresh: bool = False,
+    ) -> tuple[dict[str, NvdData], list[str]]:
         """Fetch NVD data for each CVE with one request per identifier."""
         results: dict[str, NvdData] = {}
         warnings: list[str] = []
 
         for cve_id in cve_ids:
             try:
-                cached = self._load_from_cache(cve_id)
+                cached = None if refresh else self._load_from_cache(cve_id)
                 if cached is not None:
                     results[cve_id] = cached
                     continue

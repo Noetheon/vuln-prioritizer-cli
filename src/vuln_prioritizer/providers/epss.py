@@ -32,14 +32,19 @@ class EpssProvider:
         self.max_retries = max_retries
         self.cache = cache
 
-    def fetch_many(self, cve_ids: list[str]) -> tuple[dict[str, EpssData], list[str]]:
+    def fetch_many(
+        self,
+        cve_ids: list[str],
+        *,
+        refresh: bool = False,
+    ) -> tuple[dict[str, EpssData], list[str]]:
         """Fetch EPSS records in chunks below the documented query limit."""
         results: dict[str, EpssData] = {}
         warnings: list[str] = []
         missing: list[str] = []
 
         for cve_id in cve_ids:
-            cached = self._load_from_cache(cve_id)
+            cached = None if refresh else self._load_from_cache(cve_id)
             if cached is not None:
                 results[cve_id] = cached
             else:

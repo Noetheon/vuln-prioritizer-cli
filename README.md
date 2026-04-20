@@ -204,10 +204,24 @@ vuln-prioritizer report html \
   --output report.html
 ```
 
-### Cache and Data Transparency
+### Cache Maintenance and Data Transparency
 
 ```bash
 vuln-prioritizer data status \
+  --attack-mapping-file data/attack/ctid_kev_enterprise_2025-07-28_attack-16.1_subset.json \
+  --attack-technique-metadata-file data/attack/attack_techniques_enterprise_16.1_subset.json
+```
+
+```bash
+vuln-prioritizer data update --source kev
+
+vuln-prioritizer data update \
+  --source nvd \
+  --source epss \
+  --input data/sample_cves.txt
+
+vuln-prioritizer data verify \
+  --input data/sample_cves_mixed.txt \
   --attack-mapping-file data/attack/ctid_kev_enterprise_2025-07-28_attack-16.1_subset.json \
   --attack-technique-metadata-file data/attack/attack_techniques_enterprise_16.1_subset.json
 ```
@@ -221,11 +235,19 @@ make install
 make check
 ```
 
+Hosted GitHub workflows are currently optional. The recommended local equivalent for CI plus packaging metadata is:
+
+```bash
+make workflow-check
+```
+
 Release-oriented validation:
 
 ```bash
 make release-check
 ```
+
+`make release-check` is the stricter local superset. It regenerates demo artifacts before running the packaging checks.
 
 Helpful local targets:
 

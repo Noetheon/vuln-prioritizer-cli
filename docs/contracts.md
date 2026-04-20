@@ -128,6 +128,9 @@ The public combinations currently intended for use are:
 - `attack validate`: `table`, `markdown`, `json`
 - `attack coverage`: `table`, `markdown`, `json`
 - `attack navigator-layer`: JSON file output
+- `data status`: terminal only
+- `data update`: terminal only
+- `data verify`: terminal only
 - `report html`: HTML file output
 
 Important boundary:
@@ -172,6 +175,7 @@ The following are intentionally not covered by the published JSON schemas:
 - terminal table layout
 - Markdown table layout
 - wording of warnings and recommendation text
+- terminal-only helper commands such as `data status`, `data update`, and `data verify`
 - undocumented JSON payloads from helper commands such as `attack validate` and `attack coverage`
 
 Those surfaces are useful, but they should not be treated as strict automation contracts unless they are later given their own published schemas.

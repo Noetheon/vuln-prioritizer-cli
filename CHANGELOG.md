@@ -7,9 +7,15 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `data update` and `data verify` terminal workflows for explicit cache refresh, cache coverage checks, and pinned local file verification.
+- `make workflow-check` as the local equivalent for CI plus packaging metadata validation when hosted GitHub Actions are unavailable.
+
 ### Changed
 
-- Maintained local-first validation as the primary development path while keeping release metadata and CI aligned with the codebase.
+- Expanded cache transparency from timestamp-only inspection to namespace counts, namespace checksums, and ATT&CK/local-file checksum visibility.
+- Documented the local workflow-equivalent path for SARIF, HTML, and cache verification when GitHub-hosted execution is unavailable.
 
 ## [1.0.0] - 2026-04-20
 

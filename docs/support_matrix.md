@@ -11,6 +11,8 @@
 | `attack coverage` | `--input PATH` | `markdown`, `json` | No published schema yet | Uses the same input loader for CVE extraction. |
 | `attack navigator-layer` | `--input PATH` | Navigator layer JSON | Navigator JSON, no local schema here | Exports a frequency-based ATT&CK Navigator layer. |
 | `data status` | none | none | none | Terminal inspection only. |
+| `data update` | optional `--input PATH` / `--cve` | none | none | Terminal-only cache refresh for `nvd`, `epss`, and `kev`. |
+| `data verify` | optional `--input PATH` / `--cve` | none | none | Terminal-only cache coverage, checksum, and local file verification. |
 | `report html` | analysis JSON | `html` | Consumes analysis JSON contract | No live enrichment during rendering. |
 
 ## Input-format matrix
@@ -56,3 +58,4 @@ Without a matching target, the explain flow still works, but asset-join and exac
 - Prefer `--input-format` over `auto` in CI if reproducibility matters.
 - `report html` expects an analysis JSON export, not compare JSON or explain JSON.
 - `sarif` is part of the documented contract only for `analyze`.
+- `data status`, `data update`, and `data verify` are intentionally human-facing terminal commands today.

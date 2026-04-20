@@ -32,6 +32,20 @@ This runs:
 - `mypy src`
 - `pytest`
 
+## Local Workflow Equivalent
+
+When hosted GitHub Actions are unavailable, the recommended local equivalent is:
+
+```bash
+make workflow-check
+```
+
+This adds:
+
+- `python3 -m pre_commit run --all-files`
+- `python3 -m build`
+- `python3 -m twine check dist/*`
+
 ## Demo Artifacts
 
 When output changes materially, regenerate the checked-in demo artifacts:
@@ -47,6 +61,8 @@ For a full release-oriented local sweep:
 ```bash
 make release-check
 ```
+
+`make release-check` remains the stricter maintainer sweep because it also regenerates the checked-in demo artifacts before packaging.
 
 To validate only the generated distribution artifacts and package metadata:
 

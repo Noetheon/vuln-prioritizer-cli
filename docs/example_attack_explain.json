@@ -588,7 +588,7 @@
     "epss_hits": 1,
     "filtered_out_count": 0,
     "findings_count": 1,
-    "generated_at": "2026-04-20T18:15:20+00:00",
+    "generated_at": "2026-04-20T18:45:40+00:00",
     "input_format": "cve-list",
     "input_path": "inline:CVE-2023-34362",
     "kev_hits": 1,
