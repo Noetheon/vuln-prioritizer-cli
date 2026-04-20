@@ -11,11 +11,16 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 - `data update` and `data verify` terminal workflows for explicit cache refresh, cache coverage checks, and pinned local file verification.
 - `make workflow-check` as the local equivalent for CI plus packaging metadata validation when hosted GitHub Actions are unavailable.
+- A local MkDocs-based documentation site with `make docs-check` and `make docs-serve`.
+- Maintainer-facing community setup guidance, issue template contact links, and a browsable docs landing page.
+- Stronger public metadata and security policy details for the stable OSS release line.
 
 ### Changed
 
 - Expanded cache transparency from timestamp-only inspection to namespace counts, namespace checksums, and ATT&CK/local-file checksum visibility.
 - Documented the local workflow-equivalent path for SARIF, HTML, and cache verification when GitHub-hosted execution is unavailable.
+- Pinned consumer GitHub Action examples to the stable `v1.0.0` tag and widened the composite action surface to cover `target-kind` and `target-ref`.
+- Hardened CI/release workflows so hosted runs are aligned with the stronger local workflow gate before publishing artifacts.
 
 ## [1.0.0] - 2026-04-20
 

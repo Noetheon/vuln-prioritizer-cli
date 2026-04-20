@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "vuln-prioritizer"
 version = "1.0.0"
-description = "CLI for prioritizing known CVEs with NVD, EPSS, and CISA KEV context."
+description = "Threat-informed CLI for prioritizing known CVEs with NVD, EPSS, KEV, ATT&CK, asset context, and VEX."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -13,7 +13,7 @@ license-files = ["LICENSE"]
 authors = [{ name = "vuln-prioritizer contributors" }]
 keywords = ["cve", "cvss", "epss", "kev", "security", "vulnerability-management"]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
   "Intended Audience :: Information Technology",
   "Intended Audience :: System Administrators",
@@ -38,11 +38,15 @@ dependencies = [
 Homepage = "https://github.com/Noetheon/vuln-prioritizer-cli"
 Repository = "https://github.com/Noetheon/vuln-prioritizer-cli"
 Issues = "https://github.com/Noetheon/vuln-prioritizer-cli/issues"
+Documentation = "https://github.com/Noetheon/vuln-prioritizer-cli/tree/main/docs"
+Changelog = "https://github.com/Noetheon/vuln-prioritizer-cli/blob/main/CHANGELOG.md"
+Security = "https://github.com/Noetheon/vuln-prioritizer-cli/security/policy"
 
 [project.optional-dependencies]
 dev = [
   "build>=1.2,<2.0",
   "jsonschema>=4.23,<5.0",
+  "mkdocs>=1.6,<2.0",
   "mypy>=1.10,<2.0",
   "pre-commit>=3.7,<4.0",
   "pytest>=8.0,<9.0",

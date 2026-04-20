@@ -4,6 +4,8 @@ These workflows are consumer-side examples for the current GitHub Action and CLI
 
 They are intentionally stored under `.github/examples/` instead of `.github/workflows/` so that the repository documents supported integration patterns without automatically running them inside this repo.
 
+Pin the action to a release tag in consumer repositories. The examples use `@v1.0.0` rather than `@main` for that reason.
+
 ## Included Examples
 
 - [code-scanning-sarif.yml](./code-scanning-sarif.yml)

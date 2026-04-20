@@ -1,5 +1,8 @@
 name: vuln-prioritizer
 description: Run vuln-prioritizer analyze or render a static HTML report from analysis JSON.
+branding:
+  icon: shield
+  color: blue
 
 inputs:
   mode:
@@ -22,6 +25,14 @@ inputs:
     required: true
   asset-context:
     description: Optional asset context CSV for analyze mode
+    required: false
+    default: ""
+  target-kind:
+    description: Optional target kind for analyze mode; generic, image, repository, filesystem, or host
+    required: false
+    default: generic
+  target-ref:
+    description: Optional target reference for analyze mode
     required: false
     default: ""
   vex-files:
@@ -96,10 +107,14 @@ runs:
             --output "${{ inputs.output-path }}"
             --policy-profile "${{ inputs.policy-profile }}"
             --attack-source "${{ inputs.attack-source }}"
+            --target-kind "${{ inputs.target-kind }}"
           )
 
           if [[ -n "${{ inputs.asset-context }}" ]]; then
             cmd+=(--asset-context "${{ inputs.asset-context }}")
+          fi
+          if [[ -n "${{ inputs.target-ref }}" ]]; then
+            cmd+=(--target-ref "${{ inputs.target-ref }}")
           fi
           if [[ -n "${{ inputs.policy-file }}" ]]; then
             cmd+=(--policy-file "${{ inputs.policy-file }}")

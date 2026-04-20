@@ -43,6 +43,7 @@ make workflow-check
 This adds:
 
 - `python3 -m pre_commit run --all-files`
+- `python3 -m mkdocs build --clean`
 - `python3 -m build`
 - `python3 -m twine check dist/*`
 
@@ -68,6 +69,12 @@ To validate only the generated distribution artifacts and package metadata:
 
 ```bash
 make package-check
+```
+
+To validate the browsable documentation site:
+
+```bash
+make docs-check
 ```
 
 ## Commit Discipline

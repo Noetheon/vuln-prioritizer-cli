@@ -76,6 +76,7 @@ Status: implemented locally; release workflow is wired for tagged GitHub Release
 - Stable CLI and JSON contracts.
 - Documented and tested `pipx` installation.
 - Stable scanner/SBOM inputs, Asset Context, VEX, and GitHub integration.
+- Local MkDocs-based documentation site for a browsable public doc surface.
 
 ## Deliberate Non-Goals Through `v1.0.0`
 
@@ -93,6 +94,8 @@ The repository contains example integration and output materials for the shipped
 - [docs/examples/example_pr_comment.md](./examples/example_pr_comment.md)
 - [docs/examples/example_results.sarif](./examples/example_results.sarif)
 - [docs/examples/example_report.html](./examples/example_report.html)
-- [.github/examples/README.md](../.github/examples/README.md)
+- [`.github/examples/README.md`](https://github.com/Noetheon/vuln-prioritizer-cli/blob/main/.github/examples/README.md)
+- [docs/community_repository_setup.md](./community_repository_setup.md)
+- `mkdocs.yml`
 
 These files now document current consumer workflows and example outputs for the implemented CLI/Action surface, even where filenames still reflect their earlier preview origin.

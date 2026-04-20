@@ -3,7 +3,7 @@ PYTHON ?= python3
 ATTACK_MAPPING_FILE := data/attack/ctid_kev_enterprise_2025-07-28_attack-16.1_subset.json
 ATTACK_METADATA_FILE := data/attack/attack_techniques_enterprise_16.1_subset.json
 
-.PHONY: install test lint format typecheck check workflow-check package package-check release-check demo-report demo-compare demo-explain demo-attack-report demo-attack-compare demo-attack-explain demo-attack-coverage demo-attack-navigator precommit-install
+.PHONY: install test lint format typecheck check docs-check docs-serve workflow-check package package-check release-check demo-report demo-compare demo-explain demo-attack-report demo-attack-compare demo-attack-explain demo-attack-coverage demo-attack-navigator precommit-install
 
 install:
 	$(PYTHON) -m pip install -e .[dev]
@@ -26,8 +26,15 @@ check:
 	$(PYTHON) -m mypy src
 	pytest
 
+docs-check:
+	$(PYTHON) -m mkdocs build --clean
+
+docs-serve:
+	$(PYTHON) -m mkdocs serve
+
 workflow-check:
 	$(MAKE) check
+	$(MAKE) docs-check
 	$(PYTHON) -m pre_commit run --all-files
 	$(MAKE) package-check
 

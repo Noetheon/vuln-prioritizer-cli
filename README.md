@@ -135,14 +135,14 @@ Asset context and VEX follow the same rule:
 
 ### Tagged Install with `pipx`
 
-If you want an isolated CLI install without a local virtualenv, install a tagged release directly from GitHub:
+If you want an isolated CLI install without a local virtualenv, install the tagged public release directly from GitHub:
 
 ```bash
 pipx install git+https://github.com/Noetheon/vuln-prioritizer-cli.git@v1.0.0
 vuln-prioritizer --help
 ```
 
-Tagged releases are also wired for GitHub Releases and PyPI publishing in `.github/workflows/release.yml`. If a matching PyPI release is available, `pipx install vuln-prioritizer` is the intended stable public path.
+The repository is wired for GitHub Releases and future PyPI publishing in `.github/workflows/release.yml`. Until PyPI publishing is enabled on the repository side, the tagged GitHub install above is the verified public install path.
 
 ### Setup
 
@@ -239,6 +239,13 @@ Hosted GitHub workflows are currently optional. The recommended local equivalent
 
 ```bash
 make workflow-check
+```
+
+To render the documentation site locally:
+
+```bash
+make docs-check
+make docs-serve
 ```
 
 Release-oriented validation:
@@ -432,7 +439,10 @@ Artifacts:
 - [docs/integrations/reporting_and_ci.md](docs/integrations/reporting_and_ci.md)
 - [docs/reference_cve_prioritizer_gap_analysis.md](docs/reference_cve_prioritizer_gap_analysis.md)
 - [docs/roadmap.md](docs/roadmap.md)
+- [docs/community_repository_setup.md](docs/community_repository_setup.md)
 - [docs/releases/v1.0.0.md](docs/releases/v1.0.0.md)
+
+For a browsable docs site, the repository now ships `mkdocs.yml` plus `docs/index.md`. Run `make docs-check` for a static build or `make docs-serve` for a local preview.
 
 ## Troubleshooting
 

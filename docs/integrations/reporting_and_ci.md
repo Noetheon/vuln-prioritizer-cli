@@ -16,7 +16,7 @@ Today the CLI supports:
 - `report html --input analysis.json --output report.html`
 - `attack validate|coverage|navigator-layer`
 
-The repository root also exposes a composite GitHub Action via [action.yml](../../action.yml).
+The repository root also exposes a composite GitHub Action via [`action.yml`](https://github.com/Noetheon/vuln-prioritizer-cli/blob/main/action.yml).
 
 ## GitHub Action Contract
 
@@ -35,6 +35,8 @@ Analyze-mode inputs:
 - `input-format`
 - `output-format`
 - `asset-context`
+- `target-kind`
+- `target-ref`
 - `vex-files`
 - `fail-on`
 - `policy-profile`
@@ -95,9 +97,9 @@ HTML renders from saved JSON output, not from a separate live analysis path.
 
 Consumer workflow examples:
 
-- [.github/examples/code-scanning-sarif.yml](../../.github/examples/code-scanning-sarif.yml)
-- [.github/examples/pr-comment-report.yml](../../.github/examples/pr-comment-report.yml)
-- [.github/examples/html-report-artifact.yml](../../.github/examples/html-report-artifact.yml)
+- [`.github/examples/code-scanning-sarif.yml`](https://github.com/Noetheon/vuln-prioritizer-cli/blob/main/.github/examples/code-scanning-sarif.yml)
+- [`.github/examples/pr-comment-report.yml`](https://github.com/Noetheon/vuln-prioritizer-cli/blob/main/.github/examples/pr-comment-report.yml)
+- [`.github/examples/html-report-artifact.yml`](https://github.com/Noetheon/vuln-prioritizer-cli/blob/main/.github/examples/html-report-artifact.yml)
 
 Example output artifacts:
 
