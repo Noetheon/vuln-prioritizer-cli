@@ -2,6 +2,8 @@
 
 This file lists the repository artifacts that are useful for demonstrations, evaluation, or handoff.
 
+Historical note: this evidence pack was originally assembled for the ATT&CK-focused `v0.3.0` university submission milestone. The broader release line has since moved forward, but these materials remain useful as a historical demo bundle.
+
 ## Visible Artifacts
 
 - CLI base flow: `vuln-prioritizer analyze`

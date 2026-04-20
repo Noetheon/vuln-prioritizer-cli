@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vuln-prioritizer"
-version = "0.3.0"
+version = "1.0.0"
 description = "CLI for prioritizing known CVEs with NVD, EPSS, and CISA KEV context."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -27,6 +27,7 @@ classifiers = [
 ]
 dependencies = [
   "pydantic>=2.6,<3.0",
+  "PyYAML>=6.0,<7.0",
   "python-dotenv>=1.0,<2.0",
   "requests>=2.31,<3.0",
   "rich>=13.7,<14.0",
@@ -41,11 +42,13 @@ Issues = "https://github.com/Noetheon/vuln-prioritizer-cli/issues"
 [project.optional-dependencies]
 dev = [
   "build>=1.2,<2.0",
+  "jsonschema>=4.23,<5.0",
   "mypy>=1.10,<2.0",
   "pre-commit>=3.7,<4.0",
   "pytest>=8.0,<9.0",
   "ruff>=0.5,<1.0",
   "twine>=6.0,<7.0",
+  "types-PyYAML>=6.0,<7.0",
   "types-requests>=2.32,<3.0",
 ]
 

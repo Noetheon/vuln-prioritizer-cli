@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>vuln-prioritizer report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; color: #18212d; }
+    h1, h2 { margin-bottom: 0.5rem; }
+    .meta { background: #f4f6f8; padding: 1rem; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #d7dee5; padding: 0.6rem; text-align: left; vertical-align: top; }
+    th { background: #eef3f7; }
+    .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .card { background: #f9fbfc; border: 1px solid #d7dee5; border-radius: 8px; padding: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>vuln-prioritizer Executive Report</h1>
+  <div class="meta">
+    <p><strong>Generated at:</strong> 2026-04-20T20:15:00+00:00</p>
+    <p><strong>Input:</strong> data/input_fixtures/trivy_report.json</p>
+    <p><strong>Input format:</strong> trivy-json</p>
+    <p><strong>Policy profile:</strong> enterprise</p>
+  </div>
+  <h2>Executive Summary</h2>
+  <div class="summary">
+    <div class="card"><strong>Findings shown</strong><br>2</div>
+    <div class="card"><strong>Suppressed by VEX</strong><br>0</div>
+    <div class="card"><strong>ATT&CK mapped CVEs</strong><br>0</div>
+  </div>
+  <h2>Top Risks</h2>
+  <table>
+    <thead>
+      <tr><th>CVE</th><th>Priority</th><th>CVSS</th><th>EPSS</th><th>KEV</th><th>Sources</th><th>Context Recommendation</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>CVE-2024-3094</td><td>Critical</td><td>10.0</td><td>0.843</td><td>Yes</td><td>trivy-json</td><td>Escalate validation and remediation because context indicates internet-facing exposure, production environment.</td></tr><tr><td>CVE-2024-4577</td><td>Critical</td><td>9.8</td><td>0.594</td><td>Yes</td><td>trivy-json</td><td>Review the affected components and assets in context before final remediation scheduling.</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>

@@ -13,7 +13,7 @@ Important note:
 
 ## Capability Comparison
 
-| Capability | TURROKS/CVE_Prioritizer | Baseline `v0.2.2` | `v0.3.0` target/result |
+| Capability | TURROKS/CVE_Prioritizer | Baseline `v0.2.2` | Current release line |
 | --- | --- | --- | --- |
 | CVSS / NVD enrichment | yes | yes | yes |
 | EPSS enrichment | yes | yes | yes |
@@ -55,4 +55,4 @@ This project additionally answers:
 
 ## Conclusion
 
-`v0.3.0` positions `vuln-prioritizer` as a CTID/ATT&CK-informed extension of standard CVE prioritization, not as a clone of an existing prioritizer.
+The current release line positions `vuln-prioritizer` as a CTID/ATT&CK-informed extension of standard CVE prioritization that has since grown into a broader CLI/CI workflow tool without copying the reference project.

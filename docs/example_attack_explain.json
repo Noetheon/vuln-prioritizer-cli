@@ -229,6 +229,7 @@
     "attack_relevance": "High",
     "change_reason": "CVSS and enrichment both support the same Critical outcome.",
     "changed": false,
+    "context_summary": "Seen in 1 occurrence(s).",
     "cve_id": "CVE-2023-34362",
     "cvss_base_score": 9.8,
     "cvss_only_label": "Critical",
@@ -251,7 +252,51 @@
       "discovery",
       "command-and-control"
     ],
-    "mapped_technique_count": 7
+    "mapped_technique_count": 7,
+    "provenance": {
+      "active_occurrence_count": 1,
+      "affected_paths": [],
+      "asset_count": 0,
+      "asset_ids": [],
+      "components": [],
+      "fix_versions": [],
+      "highest_asset_criticality": null,
+      "highest_asset_exposure": null,
+      "occurrence_count": 1,
+      "occurrences": [
+        {
+          "asset_business_service": null,
+          "asset_criticality": null,
+          "asset_environment": null,
+          "asset_exposure": null,
+          "asset_id": null,
+          "asset_owner": null,
+          "component_name": null,
+          "component_version": null,
+          "cve_id": "CVE-2023-34362",
+          "dependency_path": null,
+          "file_path": null,
+          "fix_versions": [],
+          "package_type": null,
+          "purl": null,
+          "raw_severity": null,
+          "source_format": "cve-list",
+          "source_record_id": "inline:1",
+          "target_kind": "generic",
+          "target_ref": null,
+          "vex_action_statement": null,
+          "vex_justification": null,
+          "vex_status": null
+        }
+      ],
+      "source_formats": [
+        "cve-list"
+      ],
+      "suppressed_occurrence_count": 0,
+      "targets": [],
+      "vex_statuses": {}
+    },
+    "suppressed_by_vex": false
   },
   "epss": {
     "cve_id": "CVE-2023-34362",
@@ -260,6 +305,7 @@
     "percentile": 0.99934
   },
   "finding": {
+    "asset_count": 0,
     "attack_mapped": true,
     "attack_mappings": [
       {
@@ -447,6 +493,8 @@
       "T1082",
       "T1105"
     ],
+    "context_recommendation": "Review the affected components and assets in context before final remediation scheduling.",
+    "context_summary": "Seen in 1 occurrence(s).",
     "cve_id": "CVE-2023-34362",
     "cvss_base_score": 9.8,
     "cvss_severity": "CRITICAL",
@@ -454,11 +502,57 @@
     "description": "In Progress MOVEit Transfer before 2021.0.6 (13.0.6), 2021.1.4 (13.1.4), 2022.0.4 (14.0.4), 2022.1.5 (14.1.5), and 2023.0.1 (15.0.1), a SQL injection vulnerability has been found in the MOVEit Transfer web application that could allow an unauthenticated attacker to gain access to MOVEit Transfer's database. Depending on the database engine being used (MySQL, Microsoft SQL Server, or Azure SQL), an attacker may be able to infer information about the structure and contents of the database, and execute SQL statements that alter or delete database elements. NOTE: this is exploited in the wild in May and June 2023; exploitation of unpatched systems can occur via HTTP or HTTPS. All versions (e.g., 2020.0 and 2019x) before the five explicitly mentioned versions are affected, including older unsupported versions.",
     "epss": 0.94254,
     "epss_percentile": 0.99934,
+    "highest_asset_criticality": null,
     "in_kev": true,
     "priority_label": "Critical",
     "priority_rank": 1,
-    "rationale": "CISA KEV lists this CVE as known exploited in the wild. NVD reports CVSS 9.8 (CRITICAL) via CVSS v3.1. FIRST EPSS is 0.943 (percentile 0.999). ATT&CK context (High) maps this CVE to 7 technique(s): T1190, T1059, T1531, T1136, T1005, T1082, T1105. CTID mapping types: exploitation_technique, primary_impact, secondary_impact. CTID ATT&CK mappings include exploitation or primary impact behavior. ATT&CK mapping note: CVE-2023-34362 is a SQL injection vulnerability in a public-facing application. Adversaries have been observed to exploit this vulnerability to install malicious software on a target system, enabling them to discover system settings and information, enumerate the underlying SQL database, retrieve files, create administrator accounts, and delete accounts.",
-    "recommended_action": "Patch or mitigate immediately, validate exposure, strengthen detection coverage, and escalate potential business impact."
+    "provenance": {
+      "active_occurrence_count": 1,
+      "affected_paths": [],
+      "asset_count": 0,
+      "asset_ids": [],
+      "components": [],
+      "fix_versions": [],
+      "highest_asset_criticality": null,
+      "highest_asset_exposure": null,
+      "occurrence_count": 1,
+      "occurrences": [
+        {
+          "asset_business_service": null,
+          "asset_criticality": null,
+          "asset_environment": null,
+          "asset_exposure": null,
+          "asset_id": null,
+          "asset_owner": null,
+          "component_name": null,
+          "component_version": null,
+          "cve_id": "CVE-2023-34362",
+          "dependency_path": null,
+          "file_path": null,
+          "fix_versions": [],
+          "package_type": null,
+          "purl": null,
+          "raw_severity": null,
+          "source_format": "cve-list",
+          "source_record_id": "inline:1",
+          "target_kind": "generic",
+          "target_ref": null,
+          "vex_action_statement": null,
+          "vex_justification": null,
+          "vex_status": null
+        }
+      ],
+      "source_formats": [
+        "cve-list"
+      ],
+      "suppressed_occurrence_count": 0,
+      "targets": [],
+      "vex_statuses": {}
+    },
+    "rationale": "CISA KEV lists this CVE as known exploited in the wild. NVD reports CVSS 9.8 (CRITICAL) via CVSS v3.1. FIRST EPSS is 0.943 (percentile 0.999). ATT&CK context (High) maps this CVE to 7 technique(s): T1190, T1059, T1531, T1136, T1005, T1082, T1105. CTID mapping types: exploitation_technique, primary_impact, secondary_impact. CTID ATT&CK mappings include exploitation or primary impact behavior. ATT&CK mapping note: CVE-2023-34362 is a SQL injection vulnerability in a public-facing application. Adversaries have been observed to exploit this vulnerability to install malicious software on a target system, enabling them to discover system settings and information, enumerate the underlying SQL database, retrieve files, create administrator accounts, and delete accounts. Input provenance includes 1 occurrence(s) from cve-list. Seen in 1 occurrence(s).",
+    "recommended_action": "Patch or mitigate immediately, validate exposure, strengthen detection coverage, and escalate potential business impact.",
+    "suppressed_by_vex": false,
+    "under_investigation": false
   },
   "kev": {
     "cve_id": "CVE-2023-34362",
@@ -488,20 +582,25 @@
       "NVD CVE API 2.0",
       "FIRST EPSS API",
       "CISA Known Exploited Vulnerabilities Catalog",
-      "CTID Mappings Explorer (local JSON artifact)"
+      "CTID Mappings Explorer (local JSON artifact)",
+      "Input formats: cve-list"
     ],
     "epss_hits": 1,
     "filtered_out_count": 0,
     "findings_count": 1,
-    "generated_at": "2026-04-20T17:05:03+00:00",
+    "generated_at": "2026-04-20T18:15:20+00:00",
+    "input_format": "cve-list",
     "input_path": "inline:CVE-2023-34362",
     "kev_hits": 1,
     "mapping_framework": "kev",
     "mapping_framework_version": "07/28/2025",
     "nvd_hits": 1,
+    "occurrences_count": 1,
     "output_format": "json",
     "output_path": "docs/example_attack_explain.json",
+    "policy_file": null,
     "policy_overrides": [],
+    "policy_profile": "default",
     "priority_policy": {
       "critical_cvss_threshold": 7.0,
       "critical_epss_threshold": 0.7,
@@ -510,7 +609,13 @@
       "medium_cvss_threshold": 7.0,
       "medium_epss_threshold": 0.1
     },
+    "schema_version": "1.0.0",
+    "source_stats": {
+      "cve-list": 1
+    },
+    "suppressed_by_vex": 0,
     "total_input": 1,
+    "under_investigation_count": 0,
     "valid_input": 1,
     "warnings": []
   },

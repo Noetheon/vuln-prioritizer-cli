@@ -36,6 +36,7 @@
     "attack_relevance": "Medium",
     "change_reason": "CVSS and enrichment both support the same Critical outcome.",
     "changed": false,
+    "context_summary": "Seen in 1 occurrence(s).",
     "cve_id": "CVE-2021-44228",
     "cvss_base_score": 10.0,
     "cvss_only_label": "Critical",
@@ -52,7 +53,51 @@
     "mapped_tactics": [
       "Initial Access"
     ],
-    "mapped_technique_count": 0
+    "mapped_technique_count": 0,
+    "provenance": {
+      "active_occurrence_count": 1,
+      "affected_paths": [],
+      "asset_count": 0,
+      "asset_ids": [],
+      "components": [],
+      "fix_versions": [],
+      "highest_asset_criticality": null,
+      "highest_asset_exposure": null,
+      "occurrence_count": 1,
+      "occurrences": [
+        {
+          "asset_business_service": null,
+          "asset_criticality": null,
+          "asset_environment": null,
+          "asset_exposure": null,
+          "asset_id": null,
+          "asset_owner": null,
+          "component_name": null,
+          "component_version": null,
+          "cve_id": "CVE-2021-44228",
+          "dependency_path": null,
+          "file_path": null,
+          "fix_versions": [],
+          "package_type": null,
+          "purl": null,
+          "raw_severity": null,
+          "source_format": "cve-list",
+          "source_record_id": "inline:1",
+          "target_kind": "generic",
+          "target_ref": null,
+          "vex_action_statement": null,
+          "vex_justification": null,
+          "vex_status": null
+        }
+      ],
+      "source_formats": [
+        "cve-list"
+      ],
+      "suppressed_occurrence_count": 0,
+      "targets": [],
+      "vex_statuses": {}
+    },
+    "suppressed_by_vex": false
   },
   "epss": {
     "cve_id": "CVE-2021-44228",
@@ -61,6 +106,7 @@
     "percentile": 0.99962
   },
   "finding": {
+    "asset_count": 0,
     "attack_mapped": true,
     "attack_mappings": [],
     "attack_note": "Representative local mapping for remote service exposure impact.",
@@ -73,6 +119,8 @@
     "attack_techniques": [
       "T1190"
     ],
+    "context_recommendation": "Review the affected components and assets in context before final remediation scheduling.",
+    "context_summary": "Seen in 1 occurrence(s).",
     "cve_id": "CVE-2021-44228",
     "cvss_base_score": 10.0,
     "cvss_severity": "CRITICAL",
@@ -80,11 +128,57 @@
     "description": "Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases 2.12.2, 2.12.3, and 2.3.1) JNDI features used in configuration, log messages, and parameters do not protect against attacker controlled LDAP and other JNDI related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled. From log4j 2.15.0, this behavior has been disabled by default. From version 2.16.0 (along with 2.12.2, 2.12.3, and 2.3.1), this functionality has been completely removed. Note that this vulnerability is specific to log4j-core and does not affect log4net, log4cxx, or other Apache Logging Services projects.",
     "epss": 0.94358,
     "epss_percentile": 0.99962,
+    "highest_asset_criticality": null,
     "in_kev": true,
     "priority_label": "Critical",
     "priority_rank": 1,
-    "rationale": "CISA KEV lists this CVE as known exploited in the wild. NVD reports CVSS 10.0 (CRITICAL) via CVSS v3.1. FIRST EPSS is 0.944 (percentile 1.000). ATT&CK context (Medium) maps this CVE to 1 technique(s): T1190. Legacy local ATT&CK CSV context is available for this CVE. ATT&CK mapping note: Representative local mapping for remote service exposure impact.",
-    "recommended_action": "Patch or mitigate immediately, validate exposure, strengthen detection coverage, and escalate potential business impact."
+    "provenance": {
+      "active_occurrence_count": 1,
+      "affected_paths": [],
+      "asset_count": 0,
+      "asset_ids": [],
+      "components": [],
+      "fix_versions": [],
+      "highest_asset_criticality": null,
+      "highest_asset_exposure": null,
+      "occurrence_count": 1,
+      "occurrences": [
+        {
+          "asset_business_service": null,
+          "asset_criticality": null,
+          "asset_environment": null,
+          "asset_exposure": null,
+          "asset_id": null,
+          "asset_owner": null,
+          "component_name": null,
+          "component_version": null,
+          "cve_id": "CVE-2021-44228",
+          "dependency_path": null,
+          "file_path": null,
+          "fix_versions": [],
+          "package_type": null,
+          "purl": null,
+          "raw_severity": null,
+          "source_format": "cve-list",
+          "source_record_id": "inline:1",
+          "target_kind": "generic",
+          "target_ref": null,
+          "vex_action_statement": null,
+          "vex_justification": null,
+          "vex_status": null
+        }
+      ],
+      "source_formats": [
+        "cve-list"
+      ],
+      "suppressed_occurrence_count": 0,
+      "targets": [],
+      "vex_statuses": {}
+    },
+    "rationale": "CISA KEV lists this CVE as known exploited in the wild. NVD reports CVSS 10.0 (CRITICAL) via CVSS v3.1. FIRST EPSS is 0.944 (percentile 1.000). ATT&CK context (Medium) maps this CVE to 1 technique(s): T1190. Legacy local ATT&CK CSV context is available for this CVE. ATT&CK mapping note: Representative local mapping for remote service exposure impact. Input provenance includes 1 occurrence(s) from cve-list. Seen in 1 occurrence(s).",
+    "recommended_action": "Patch or mitigate immediately, validate exposure, strengthen detection coverage, and escalate potential business impact.",
+    "suppressed_by_vex": false,
+    "under_investigation": false
   },
   "kev": {
     "cve_id": "CVE-2021-44228",
@@ -114,20 +208,25 @@
       "NVD CVE API 2.0",
       "FIRST EPSS API",
       "CISA Known Exploited Vulnerabilities Catalog",
-      "Local ATT&CK CSV mapping"
+      "Local ATT&CK CSV mapping",
+      "Input formats: cve-list"
     ],
     "epss_hits": 1,
     "filtered_out_count": 0,
     "findings_count": 1,
-    "generated_at": "2026-04-20T17:05:02+00:00",
+    "generated_at": "2026-04-20T18:15:20+00:00",
+    "input_format": "cve-list",
     "input_path": "inline:CVE-2021-44228",
     "kev_hits": 1,
     "mapping_framework": null,
     "mapping_framework_version": null,
     "nvd_hits": 1,
+    "occurrences_count": 1,
     "output_format": "json",
     "output_path": "docs/example_explain.json",
+    "policy_file": null,
     "policy_overrides": [],
+    "policy_profile": "default",
     "priority_policy": {
       "critical_cvss_threshold": 7.0,
       "critical_epss_threshold": 0.7,
@@ -136,7 +235,13 @@
       "medium_cvss_threshold": 7.0,
       "medium_epss_threshold": 0.1
     },
+    "schema_version": "1.0.0",
+    "source_stats": {
+      "cve-list": 1
+    },
+    "suppressed_by_vex": 0,
     "total_input": 1,
+    "under_investigation_count": 0,
     "valid_input": 1,
     "warnings": []
   },

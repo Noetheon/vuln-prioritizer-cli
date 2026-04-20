@@ -6,6 +6,12 @@ Supported input formats:
 
 - TXT files with one CVE per line
 - CSV files with a `cve` or `cve_id` column
+- Trivy JSON
+- Grype JSON
+- CycloneDX JSON
+- SPDX JSON
+- OWASP Dependency-Check JSON
+- documented GitHub alerts JSON export
 
 Input is normalized, validated, and deduplicated. Invalid lines become warnings instead of aborting the whole run.
 
@@ -36,7 +42,7 @@ Two local ATT&CK modes exist:
 - `local-csv`: legacy compatibility mode for small hand-authored CSV mappings
 - `ctid-json`: structured CTID Mappings Explorer JSON plus local ATT&CK technique metadata
 
-The `ctid-json` workflow is the preferred `v0.3.0` path.
+The `ctid-json` workflow is the preferred current ATT&CK path.
 
 ATT&CK rules:
 
@@ -83,7 +89,7 @@ High-impact tactics are:
 
 ## Prioritization
 
-The primary priority score does not change in `v0.3.0`:
+The primary priority score does not change in the stable release line:
 
 - `Critical`: KEV or `(EPSS >= 0.70 and CVSS >= 7.0)`
 - `High`: `EPSS >= 0.40` or `CVSS >= 9.0`
@@ -91,6 +97,12 @@ The primary priority score does not change in `v0.3.0`:
 - `Low`: everything else
 
 ATT&CK is a contextual signal. It enriches explanation, reporting, and management framing without silently changing the score.
+
+Asset context and VEX follow the same principle:
+
+- asset context changes explanatory recommendation text, not `priority_label`
+- VEX determines visibility/applicability at occurrence level
+- `--show-suppressed` exposes otherwise hidden fully-suppressed findings
 
 ## Comparison Mode
 
@@ -120,7 +132,7 @@ The `compare` command still uses:
 
 ## ATT&CK Utility Commands
 
-`v0.3.0` adds:
+The current release line includes:
 
 - `attack validate`
 - `attack coverage`
@@ -134,6 +146,7 @@ These commands work from local ATT&CK files and do not require NVD/EPSS/KEV.
 - NVD and EPSS are cached per CVE
 - the online KEV catalog is cached as an indexed dataset
 - ATT&CK local files are read directly from disk
+- `data status` exposes cache timestamps and local ATT&CK version metadata
 
 ## Limitations
 

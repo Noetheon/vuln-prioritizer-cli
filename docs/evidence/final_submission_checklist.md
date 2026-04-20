@@ -2,6 +2,8 @@
 
 This checklist is intended for the final university submission of the V0.3 ATT&CK extension.
 
+Historical note: this checklist tracks the earlier `v0.3.0` submission package. It is intentionally preserved as evidence and is not the current release checklist for the broader `v1.0.0` contract release line.
+
 ## Scope Completion
 
 - [x] V0.3 CTID ATT&CK extension implemented

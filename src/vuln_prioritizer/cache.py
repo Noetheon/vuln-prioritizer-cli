@@ -49,3 +49,26 @@ class FileCache:
     def _path_for(self, namespace: str, key: str) -> Path:
         digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
         return self.cache_dir / namespace / f"{digest}.json"
+
+    def latest_cached_at(self, namespace: str) -> str | None:
+        """Return the newest cache timestamp recorded for a namespace."""
+        namespace_path = self.cache_dir / namespace
+        if not namespace_path.exists():
+            return None
+
+        newest: datetime | None = None
+        for path in namespace_path.glob("*.json"):
+            try:
+                document = json.loads(path.read_text(encoding="utf-8"))
+                cached_at_raw = document.get("cached_at")
+                if not cached_at_raw:
+                    continue
+                cached_at = datetime.fromisoformat(cached_at_raw)
+                if cached_at.tzinfo is None:
+                    cached_at = cached_at.replace(tzinfo=UTC)
+                if newest is None or cached_at > newest:
+                    newest = cached_at
+            except (OSError, json.JSONDecodeError, ValueError):
+                continue
+
+        return newest.isoformat() if newest is not None else None

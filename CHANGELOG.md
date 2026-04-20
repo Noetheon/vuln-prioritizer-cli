@@ -11,6 +11,23 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 - Maintained local-first validation as the primary development path while keeping release metadata and CI aligned with the codebase.
 
+## [1.0.0] - 2026-04-20
+
+### Added
+
+- Scanner- and SBOM-native JSON inputs for `trivy-json`, `grype-json`, `cyclonedx-json`, `spdx-json`, `dependency-check-json`, and `github-alerts-json`.
+- Occurrence-level provenance with source stats, components, affected paths, fix versions, and aggregated per-CVE reporting.
+- Asset-context joins, built-in policy profiles, and YAML-backed custom policy files for contextual recommendation text.
+- OpenVEX and CycloneDX VEX support with exact-match suppression, `--show-suppressed`, and occurrence-level applicability reporting.
+- `analyze --format sarif`, `--fail-on`, `data status`, `report html`, published JSON schemas, architecture/contracts docs, and a composite GitHub Action.
+- Release automation extended for GitHub Releases plus PyPI publishing on tagged releases.
+
+### Changed
+
+- Expanded the README and public documentation from an ATT&CK extension snapshot into a stable CLI/CI integration guide.
+- Promoted the JSON export surface to the documented machine contract with `metadata.schema_version = 1.0.0`.
+- Kept the primary priority calculation rule-based from CVSS, EPSS, and KEV while documenting ATT&CK, asset context, and VEX as explicit contextual layers.
+
 ## [0.3.0] - 2026-04-20
 
 ### Added

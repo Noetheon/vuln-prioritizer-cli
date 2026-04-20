@@ -8,7 +8,9 @@ from typing import Literal
 from vuln_prioritizer.models import (
     AttackData,
     ComparisonFinding,
+    ContextPolicyProfile,
     EpssData,
+    FindingProvenance,
     KevData,
     NvdData,
     PrioritizedFinding,
@@ -21,6 +23,7 @@ from vuln_prioritizer.scoring import (
     determine_priority,
     recommended_action,
 )
+from vuln_prioritizer.services.contextualization import is_suppressed_by_vex, is_under_investigation
 
 SortField = Literal["priority", "epss", "cvss", "cve"]
 
@@ -39,14 +42,22 @@ class PrioritizationService:
         epss_data: dict[str, EpssData],
         kev_data: dict[str, KevData],
         attack_data: dict[str, AttackData],
+        provenance_by_cve: dict[str, FindingProvenance] | None = None,
+        context_profile: ContextPolicyProfile | None = None,
     ) -> tuple[list[PrioritizedFinding], dict[str, int]]:
         findings: list[PrioritizedFinding] = []
+        active_context_profile = context_profile or ContextPolicyProfile()
+        provenance_map = provenance_by_cve or {}
 
         for cve_id in cve_ids:
             nvd = nvd_data.get(cve_id, NvdData(cve_id=cve_id))
             epss = epss_data.get(cve_id, EpssData(cve_id=cve_id))
             kev = kev_data.get(cve_id, KevData(cve_id=cve_id, in_kev=False))
             attack = attack_data.get(cve_id, AttackData(cve_id=cve_id))
+            provenance = provenance_map.get(cve_id, FindingProvenance())
+            context_summary, context_recommendation = active_context_profile.describe(provenance)
+            suppressed_by_vex = is_suppressed_by_vex(provenance)
+            under_investigation = is_under_investigation(provenance)
 
             priority_label, priority_rank = determine_priority(nvd, epss, kev, self.policy)
             findings.append(
@@ -67,9 +78,25 @@ class PrioritizationService:
                     attack_note=attack.attack_note,
                     attack_mappings=attack.mappings,
                     attack_technique_details=attack.techniques,
+                    provenance=provenance,
+                    context_summary=context_summary,
+                    context_recommendation=context_recommendation,
+                    highest_asset_criticality=provenance.highest_asset_criticality,
+                    asset_count=provenance.asset_count,
+                    suppressed_by_vex=suppressed_by_vex,
+                    under_investigation=under_investigation,
                     priority_label=priority_label,
                     priority_rank=priority_rank,
-                    rationale=build_rationale(nvd, epss, kev, attack),
+                    rationale=build_rationale(
+                        nvd,
+                        epss,
+                        kev,
+                        attack,
+                        provenance,
+                        context_summary=context_summary,
+                        suppressed_by_vex=suppressed_by_vex,
+                        under_investigation=under_investigation,
+                    ),
                     recommended_action=recommended_action(priority_label),
                 )
             )
@@ -85,12 +112,15 @@ class PrioritizationService:
         kev_only: bool = False,
         min_cvss: float | None = None,
         min_epss: float | None = None,
+        show_suppressed: bool = False,
     ) -> list[PrioritizedFinding]:
         """Filter findings after enrichment and scoring."""
         filtered: list[PrioritizedFinding] = []
         allowed_priorities = priorities or set()
 
         for finding in findings:
+            if not show_suppressed and finding.suppressed_by_vex:
+                continue
             if allowed_priorities and finding.priority_label not in allowed_priorities:
                 continue
             if kev_only and not finding.in_kev:
@@ -143,6 +173,9 @@ class PrioritizationService:
                     attack_relevance=finding.attack_relevance,
                     mapped_technique_count=len(finding.attack_technique_details),
                     mapped_tactics=finding.attack_tactics,
+                    provenance=finding.provenance,
+                    context_summary=finding.context_summary,
+                    suppressed_by_vex=finding.suppressed_by_vex,
                     changed=cvss_only_rank != finding.priority_rank,
                     delta_rank=cvss_only_rank - finding.priority_rank,
                     change_reason=build_comparison_reason(

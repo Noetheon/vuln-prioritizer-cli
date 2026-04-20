@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from html import escape
 from pathlib import Path
 
 from rich.console import Group
@@ -32,17 +33,19 @@ def render_findings_table(findings: list[PrioritizedFinding]) -> Table:
     table.add_column("KEV")
     table.add_column("ATT&CK")
     table.add_column("Attack Relevance")
+    table.add_column("Source")
     table.add_column("Description", overflow="fold")
 
     for finding in findings:
         table.add_row(
             finding.cve_id,
-            finding.priority_label,
+            _format_priority_indicator(finding.priority_label, finding.suppressed_by_vex),
             format_score(finding.cvss_base_score, digits=1),
             format_score(finding.epss, digits=3),
             "Yes" if finding.in_kev else "No",
             _format_attack_indicator(finding.attack_mapped, len(finding.attack_technique_details)),
             finding.attack_relevance,
+            ", ".join(finding.provenance.source_formats) or "N.A.",
             truncate_text(finding.description or "N.A.", 90),
         )
 
@@ -66,7 +69,7 @@ def render_compare_table(comparisons: list[ComparisonFinding]) -> Table:
         table.add_row(
             row.cve_id,
             row.cvss_only_label,
-            row.enriched_label,
+            _format_priority_indicator(row.enriched_label, row.suppressed_by_vex),
             _format_attack_indicator(row.attack_mapped, row.mapped_technique_count),
             row.attack_relevance,
             format_score(row.cvss_base_score, digits=1),
@@ -86,8 +89,11 @@ def render_summary_panel(
 ) -> Panel:
     """Render the shared terminal summary panel."""
     lines = [
+        f"Schema version: {context.schema_version}",
         f"Total input rows: {context.total_input}",
         f"Valid unique CVEs: {context.valid_input}",
+        f"Occurrences: {context.occurrences_count}",
+        f"Input format: {context.input_format}",
         f"Findings shown: {context.findings_count}",
         f"Filtered out: {context.filtered_out_count}",
         f"NVD hits: {context.nvd_hits}/{context.valid_input}",
@@ -107,6 +113,12 @@ def render_summary_panel(
             lines.append(f"Mapping version: {context.mapping_framework_version}")
         if context.attack_version:
             lines.append(f"ATT&CK version: {context.attack_version}")
+    if context.source_stats:
+        lines.append("Source stats: " + _format_distribution(context.source_stats))
+    if context.suppressed_by_vex:
+        lines.append(f"Suppressed by VEX: {context.suppressed_by_vex}")
+    if context.under_investigation_count:
+        lines.append(f"Under investigation: {context.under_investigation_count}")
 
     if mode == "compare" and changed_count is not None:
         unchanged_count = max(context.findings_count - changed_count, 0)
@@ -156,8 +168,10 @@ def generate_markdown_report(
             "## Findings",
             "",
             "| CVE ID | Description | CVSS | Severity | CVSS Version | EPSS | EPSS Percentile | "
-            "KEV | ATT&CK | Attack Relevance | Priority | Rationale | Recommended Action |",
-            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+            "KEV | ATT&CK | Attack Relevance | Sources | Asset Criticality | VEX | Priority | "
+            "Rationale | Recommended Action | Context Recommendation |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | "
+            "--- | --- | --- | --- |",
         ]
     )
 
@@ -181,9 +195,13 @@ def generate_markdown_report(
                         )
                     ),
                     escape_pipes(finding.attack_relevance),
+                    escape_pipes(", ".join(finding.provenance.source_formats) or "N.A."),
+                    escape_pipes(finding.highest_asset_criticality or "N.A."),
+                    escape_pipes(_format_vex_statuses(finding.provenance.vex_statuses)),
                     finding.priority_label,
                     escape_pipes(finding.rationale),
                     escape_pipes(finding.recommended_action),
+                    escape_pipes(finding.context_recommendation or "N.A."),
                 ]
             )
             + " |"
@@ -219,6 +237,31 @@ def generate_markdown_report(
             )
     else:
         lines.append("No mapped CVEs were included in this export.")
+
+    lines.extend(["", "## Finding Provenance", ""])
+    if findings:
+        lines.extend(
+            [
+                "| CVE ID | Sources | Components | Paths | Fix Versions | Targets | VEX Statuses |",
+                "| --- | --- | --- | --- | --- | --- | --- |",
+            ]
+        )
+        for finding in findings:
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        finding.cve_id,
+                        escape_pipes(", ".join(finding.provenance.source_formats) or "N.A."),
+                        escape_pipes(", ".join(finding.provenance.components) or "N.A."),
+                        escape_pipes(", ".join(finding.provenance.affected_paths) or "N.A."),
+                        escape_pipes(", ".join(finding.provenance.fix_versions) or "N.A."),
+                        escape_pipes(", ".join(finding.provenance.targets) or "N.A."),
+                        escape_pipes(_format_vex_statuses(finding.provenance.vex_statuses)),
+                    ]
+                )
+                + " |"
+            )
 
     return "\n".join(lines) + "\n"
 
@@ -356,6 +399,12 @@ def render_explain_view(
     signal_table.add_row("ATT&CK Techniques", comma_or_na(attack.attack_techniques))
     signal_table.add_row("ATT&CK Tactics", comma_or_na(attack.attack_tactics))
     signal_table.add_row("ATT&CK Note", attack.attack_note or "N.A.")
+    signal_table.add_row("Input Sources", comma_or_na(finding.provenance.source_formats))
+    signal_table.add_row("Components", comma_or_na(finding.provenance.components))
+    signal_table.add_row("Targets", comma_or_na(finding.provenance.targets))
+    signal_table.add_row("Asset Criticality", finding.highest_asset_criticality or "N.A.")
+    signal_table.add_row("Asset Count", str(finding.asset_count))
+    signal_table.add_row("VEX Statuses", _format_vex_statuses(finding.provenance.vex_statuses))
     signal_table.add_row("KEV Vendor", kev.vendor_project or "N.A.")
     signal_table.add_row("KEV Product", kev.product or "N.A.")
     signal_table.add_row("KEV Required Action", kev.required_action or "N.A.")
@@ -401,6 +450,36 @@ def render_explain_view(
     action_panel = Panel(
         normalize_whitespace(finding.recommended_action), title="Recommended Action"
     )
+    context_panel = Panel(
+        normalize_whitespace(finding.context_recommendation or "No context recommendation."),
+        title="Context Recommendation",
+    )
+    applicability_table = Table(title="Applicability")
+    applicability_table.add_column("Component")
+    applicability_table.add_column("Target")
+    applicability_table.add_column("VEX Status")
+    applicability_table.add_column("Justification")
+    applicability_table.add_column("Action")
+    if finding.provenance.occurrences:
+        for occurrence in finding.provenance.occurrences:
+            applicability_table.add_row(
+                " ".join(
+                    part
+                    for part in [occurrence.component_name, occurrence.component_version]
+                    if part
+                ).strip()
+                or "N.A.",
+                (
+                    f"{occurrence.target_kind}:{occurrence.target_ref}"
+                    if occurrence.target_ref
+                    else "N.A."
+                ),
+                occurrence.vex_status or "N.A.",
+                occurrence.vex_justification or "N.A.",
+                occurrence.vex_action_statement or "N.A.",
+            )
+    else:
+        applicability_table.add_row("N.A.", "N.A.", "N.A.", "N.A.", "N.A.")
 
     references = nvd.references[:10]
     references_panel = Panel(
@@ -416,6 +495,8 @@ def render_explain_view(
         attack_panel,
         comparison_panel,
         action_panel,
+        context_panel,
+        applicability_table,
         references_panel,
     )
 
@@ -455,6 +536,11 @@ def generate_explain_markdown(
             f"- ATT&CK Techniques: {comma_or_na(attack.attack_techniques)}",
             f"- ATT&CK Tactics: {comma_or_na(attack.attack_tactics)}",
             f"- ATT&CK Note: {attack.attack_note or 'N.A.'}",
+            f"- Sources: {comma_or_na(finding.provenance.source_formats)}",
+            f"- Components: {comma_or_na(finding.provenance.components)}",
+            f"- Targets: {comma_or_na(finding.provenance.targets)}",
+            f"- Highest Asset Criticality: `{finding.highest_asset_criticality or 'N.A.'}`",
+            f"- VEX Statuses: {_format_vex_statuses(finding.provenance.vex_statuses)}",
             "",
             "## Description",
             normalize_whitespace(nvd.description or "N.A."),
@@ -507,6 +593,52 @@ def generate_explain_markdown(
             "## Recommended Action",
             normalize_whitespace(finding.recommended_action),
             "",
+            "## Context Recommendation",
+            normalize_whitespace(finding.context_recommendation or "No context recommendation."),
+            "",
+            "## Applicability",
+            "",
+            "| Component | Target | VEX Status | Justification | Action |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+    )
+    if finding.provenance.occurrences:
+        for occurrence in finding.provenance.occurrences:
+            component_label = (
+                " ".join(
+                    part
+                    for part in [
+                        occurrence.component_name,
+                        occurrence.component_version,
+                    ]
+                    if part
+                ).strip()
+                or "N.A."
+            )
+            target_label = (
+                f"{occurrence.target_kind}:{occurrence.target_ref}"
+                if occurrence.target_ref
+                else "N.A."
+            )
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        escape_pipes(component_label),
+                        escape_pipes(target_label),
+                        escape_pipes(occurrence.vex_status or "N.A."),
+                        escape_pipes(occurrence.vex_justification or "N.A."),
+                        escape_pipes(occurrence.vex_action_statement or "N.A."),
+                    ]
+                )
+                + " |"
+            )
+    else:
+        lines.append("| N.A. | N.A. | N.A. | N.A. | N.A. |")
+
+    lines.extend(
+        [
+            "",
             "## KEV Metadata",
             f"- Vendor/Project: `{kev.vendor_project or 'N.A.'}`",
             f"- Product: `{kev.product or 'N.A.'}`",
@@ -545,6 +677,139 @@ def generate_explain_json(
         "comparison": comparison.model_dump() if comparison is not None else None,
     }
     return json.dumps(payload, indent=2, sort_keys=True)
+
+
+def generate_sarif_report(
+    findings: list[PrioritizedFinding],
+    context: AnalysisContext,
+) -> str:
+    """Render a SARIF report for analyze output."""
+    level_map = {
+        "Critical": "error",
+        "High": "error",
+        "Medium": "warning",
+        "Low": "note",
+    }
+    results: list[dict] = []
+    for finding in findings:
+        message = (
+            f"{finding.cve_id}: {finding.priority_label} priority "
+            "based on CVSS/EPSS/KEV with contextual enrichment."
+        )
+        results.append(
+            {
+                "ruleId": f"vuln-prioritizer/{finding.priority_label.lower()}",
+                "level": level_map.get(finding.priority_label, "note"),
+                "message": {"text": message},
+                "properties": {
+                    "cve": finding.cve_id,
+                    "priority": finding.priority_label,
+                    "cvss": finding.cvss_base_score,
+                    "epss": finding.epss,
+                    "in_kev": finding.in_kev,
+                    "attack_relevance": finding.attack_relevance,
+                    "sources": finding.provenance.source_formats,
+                    "components": finding.provenance.components,
+                    "suppressed_by_vex": finding.suppressed_by_vex,
+                },
+                "locations": [
+                    {
+                        "physicalLocation": {
+                            "artifactLocation": {
+                                "uri": finding.provenance.affected_paths[0]
+                                if finding.provenance.affected_paths
+                                else context.input_path
+                            }
+                        }
+                    }
+                ],
+            }
+        )
+    payload = {
+        "version": "2.1.0",
+        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "vuln-prioritizer",
+                        "version": context.schema_version,
+                    }
+                },
+                "results": results,
+            }
+        ],
+    }
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
+def generate_html_report(report_payload: dict) -> str:
+    """Render a static HTML report from a JSON analysis payload."""
+    metadata = report_payload.get("metadata", {})
+    findings = report_payload.get("findings", [])
+    attack_summary = report_payload.get("attack_summary", {})
+    rows = []
+    for finding in findings:
+        source_formats = finding.get("provenance", {}).get("source_formats", [])
+        source_label = ", ".join(source_formats) or "N.A."
+        rows.append(
+            "<tr>"
+            f"<td>{escape(finding.get('cve_id', 'N.A.'))}</td>"
+            f"<td>{escape(str(finding.get('priority_label', 'N.A.')))}</td>"
+            f"<td>{escape(str(finding.get('cvss_base_score', 'N.A.')))}</td>"
+            f"<td>{escape(str(finding.get('epss', 'N.A.')))}</td>"
+            f"<td>{escape('Yes' if finding.get('in_kev') else 'No')}</td>"
+            f"<td>{escape(source_label)}</td>"
+            f"<td>{escape(finding.get('context_recommendation') or 'N.A.')}</td>"
+            "</tr>"
+        )
+    findings_count = escape(str(metadata.get("findings_count", 0)))
+    suppressed_count = escape(str(metadata.get("suppressed_by_vex", 0)))
+    mapped_cves = escape(str(attack_summary.get("mapped_cves", 0)))
+    findings_header = "<th>CVE</th><th>Priority</th><th>CVSS</th><th>EPSS</th>"
+    findings_header += "<th>KEV</th><th>Sources</th><th>Context Recommendation</th>"
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>vuln-prioritizer report</title>
+  <style>
+    body {{ font-family: Arial, sans-serif; margin: 2rem; color: #18212d; }}
+    h1, h2 {{ margin-bottom: 0.5rem; }}
+    .meta {{ background: #f4f6f8; padding: 1rem; border-radius: 8px; }}
+    table {{ width: 100%; border-collapse: collapse; margin-top: 1rem; }}
+    th, td {{ border: 1px solid #d7dee5; padding: 0.6rem; text-align: left; vertical-align: top; }}
+    th {{ background: #eef3f7; }}
+    .summary {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }}
+    .card {{ background: #f9fbfc; border: 1px solid #d7dee5; border-radius: 8px; padding: 1rem; }}
+  </style>
+</head>
+<body>
+  <h1>vuln-prioritizer Executive Report</h1>
+  <div class="meta">
+    <p><strong>Generated at:</strong> {escape(str(metadata.get("generated_at", "N.A.")))}</p>
+    <p><strong>Input:</strong> {escape(str(metadata.get("input_path", "N.A.")))}</p>
+    <p><strong>Input format:</strong> {escape(str(metadata.get("input_format", "N.A.")))}</p>
+    <p><strong>Policy profile:</strong> {escape(str(metadata.get("policy_profile", "default")))}</p>
+  </div>
+  <h2>Executive Summary</h2>
+  <div class="summary">
+    <div class="card"><strong>Findings shown</strong><br>{findings_count}</div>
+    <div class="card"><strong>Suppressed by VEX</strong><br>{suppressed_count}</div>
+    <div class="card"><strong>ATT&CK mapped CVEs</strong><br>{mapped_cves}</div>
+  </div>
+  <h2>Top Risks</h2>
+  <table>
+    <thead>
+      <tr>{findings_header}</tr>
+    </thead>
+    <tbody>
+      {"".join(rows)}
+    </tbody>
+  </table>
+</body>
+</html>
+"""
 
 
 def format_score(value: float | None, digits: int) -> str:
@@ -683,6 +948,18 @@ def _format_attack_indicator(mapped: bool, technique_count: int) -> str:
     if not mapped:
         return "Unmapped"
     return f"{technique_count} technique(s)"
+
+
+def _format_priority_indicator(priority_label: str, suppressed_by_vex: bool) -> str:
+    if suppressed_by_vex:
+        return f"{priority_label} (suppressed)"
+    return priority_label
+
+
+def _format_vex_statuses(vex_statuses: dict[str, int]) -> str:
+    if not vex_statuses:
+        return "N.A."
+    return _format_distribution(vex_statuses)
 
 
 def _mapping_types(mappings: list[AttackMapping]) -> list[str]:

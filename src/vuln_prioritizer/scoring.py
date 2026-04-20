@@ -6,6 +6,7 @@ from vuln_prioritizer.config import PRIORITY_RANKS, PRIORITY_RECOMMENDATIONS
 from vuln_prioritizer.models import (
     AttackData,
     EpssData,
+    FindingProvenance,
     KevData,
     NvdData,
     PrioritizedFinding,
@@ -64,6 +65,11 @@ def build_rationale(
     epss: EpssData,
     kev: KevData,
     attack: AttackData | None = None,
+    provenance: FindingProvenance | None = None,
+    *,
+    context_summary: str | None = None,
+    suppressed_by_vex: bool = False,
+    under_investigation: bool = False,
 ) -> str:
     """Build a deterministic rationale string from the available signals."""
     parts: list[str] = []
@@ -101,6 +107,31 @@ def build_rationale(
     if attack and attack.attack_note:
         parts.append(f"ATT&CK mapping note: {attack.attack_note.rstrip('.')}.")
 
+    if provenance and provenance.occurrence_count:
+        parts.append(
+            f"Input provenance includes {provenance.occurrence_count} occurrence(s) from "
+            + ", ".join(provenance.source_formats)
+            + "."
+        )
+        if provenance.components:
+            parts.append(
+                "Affected components include: "
+                + ", ".join(provenance.components[:5])
+                + ("." if len(provenance.components) <= 5 else ", ...")
+            )
+    if context_summary:
+        parts.append(context_summary.rstrip(".") + ".")
+    if suppressed_by_vex:
+        parts.append(
+            "Matching VEX statements mark all known occurrences as not affected or fixed, so the "
+            "finding is suppressed by default."
+        )
+    elif under_investigation:
+        parts.append(
+            "At least one matching VEX statement is still under investigation, so the finding "
+            "remains visible."
+        )
+
     return " ".join(parts)
 
 
@@ -111,6 +142,12 @@ def build_comparison_reason(
     cvss_only_rank: int,
 ) -> str:
     """Explain why the enriched result differs from or matches the CVSS-only baseline."""
+    if finding.suppressed_by_vex:
+        return (
+            "VEX marks all matched occurrences as not affected or fixed; the finding remains "
+            "available only when suppressed results are requested."
+        )
+
     if finding.priority_rank < cvss_only_rank:
         if finding.in_kev:
             return (

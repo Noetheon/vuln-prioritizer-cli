@@ -13,13 +13,15 @@ The core security idea is layered prioritization:
 - CISA KEV provides a known-exploitation signal
 - CTID ATT&CK mappings provide adversary-behavior and impact context where official mappings exist
 
-That fourth layer is the differentiator in `v0.3.0`.
+The broader differentiator in the current release line is that this core model now extends cleanly into scanner-native inputs, provenance, asset context, VEX-aware applicability, and CI-friendly outputs without abandoning a small CLI shape.
 
 ## Main Workflows
 
 - `analyze` for prioritized triage output
 - `compare` for `CVSS-only` versus enriched reasoning
 - `explain` for a single-CVE deep dive
+- `data status` for cache and source transparency
+- `report html` for static executive reporting from saved analysis JSON
 - `attack coverage` for mapped versus unmapped visibility
 - `attack navigator-layer` for ATT&CK visualization output
 

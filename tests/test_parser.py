@@ -19,7 +19,7 @@ def test_parse_txt_normalizes_and_deduplicates(tmp_path: Path) -> None:
     assert [item.cve_id for item in items] == ["CVE-2021-44228", "CVE-2024-3094"]
     assert total_rows == 4
     assert any("invalid CVE identifier" in warning for warning in warnings)
-    assert any("duplicate CVE identifier" in warning for warning in warnings)
+    assert all("duplicate CVE identifier" not in warning for warning in warnings)
 
 
 def test_parse_csv_accepts_cve_id_header(tmp_path: Path) -> None:

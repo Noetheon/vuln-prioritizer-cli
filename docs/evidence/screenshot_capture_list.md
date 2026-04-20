@@ -2,6 +2,8 @@
 
 This file lists the recommended screenshots for the final presentation or written submission.
 
+Historical note: this capture list belongs to the earlier `v0.3.0` ATT&CK-extension submission package and is kept for evidence continuity.
+
 ## Core CLI Screenshots
 
 1. `python3 -m vuln_prioritizer.cli --help`

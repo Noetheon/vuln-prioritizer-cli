@@ -1,7 +1,7 @@
 # Vulnerability Priority Comparison Report
 
 ## Run Metadata
-- Generated at: `2026-04-20T17:05:03+00:00`
+- Generated at: `2026-04-20T18:15:20+00:00`
 - Input file: `data/sample_cves_mixed.txt`
 - Output format: `markdown`
 - ATT&CK context enabled: `yes`
@@ -33,6 +33,7 @@
 - FIRST EPSS API
 - CISA Known Exploited Vulnerabilities Catalog
 - CTID Mappings Explorer (local JSON artifact)
+- Input formats: cve-list
 
 ## Summary
 - Total input rows: 5
