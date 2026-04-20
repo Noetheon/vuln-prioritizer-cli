@@ -51,7 +51,8 @@ def test_markdown_report_contains_headers_summary_metadata_and_na(tmp_path: Path
     assert "- Findings shown: 1" in report
     assert "- Filtered out: 0" in report
     assert "- Active filters: kev-only" in report
-    assert "| CVE ID | Description | CVSS | Severity | EPSS |" in report
+    assert "## ATT&CK Context Summary" in report
+    assert "| CVE ID | Description | CVSS | Severity | CVSS Version | EPSS |" in report
     assert "N.A." in report
 
     output_file = tmp_path / "report.md"
@@ -120,6 +121,9 @@ def test_compare_markdown_report_contains_changed_and_unchanged_rows() -> None:
     assert "# Vulnerability Priority Comparison Report" in report
     assert "- Changed rows: 1" in report
     assert "- Unchanged rows: 1" in report
-    assert "| CVE ID | Description | CVSS-only | Enriched | Delta | Changed |" in report
+    assert "## ATT&CK Context Summary" in report
+    assert "| CVE ID | Description | CVSS-only | Enriched | ATT&CK | Attack Relevance |" in report
     assert "KEV membership raises this CVE" in report
-    assert "| CVE-2024-0002 | No change | Low | Low | No change | No |" in report
+    assert (
+        "| CVE-2024-0002 | No change | Low | Low | Unmapped | Unmapped | No change | No |" in report
+    )

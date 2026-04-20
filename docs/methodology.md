@@ -7,7 +7,7 @@ Supported input formats:
 - TXT files with one CVE per line
 - CSV files with a `cve` or `cve_id` column
 
-Input is normalized, validated, and deduplicated. Invalid lines do not immediately abort the run; they are recorded as warnings.
+Input is normalized, validated, and deduplicated. Invalid lines become warnings instead of aborting the whole run.
 
 ## Data Enrichment
 
@@ -16,6 +16,7 @@ Input is normalized, validated, and deduplicated. Invalid lines do not immediate
 - one request per CVE via `cveId`
 - English description preferred
 - CVSS selection order: `v4.0 -> v3.1 -> v3.0 -> v2`
+- the chosen CVSS family is stored as `cvss_version`
 
 ### EPSS
 
@@ -30,71 +31,112 @@ Input is normalized, validated, and deduplicated. Invalid lines do not immediate
 
 ### ATT&CK
 
-- disabled in the MVP by default
-- local CSV mapping only
-- no heuristic mapping from free text
+Two local ATT&CK modes exist:
 
-## Caching
+- `local-csv`: legacy compatibility mode for small hand-authored CSV mappings
+- `ctid-json`: structured CTID Mappings Explorer JSON plus local ATT&CK technique metadata
 
-- optional file cache under `.cache/vuln-prioritizer`
-- NVD and EPSS are cached per CVE
-- the online KEV catalog is cached as an indexed dataset
-- TTL is configurable via CLI; with `--no-cache` the tool runs entirely without cache
+The `ctid-json` workflow is the preferred `v0.3.0` path.
+
+ATT&CK rules:
+
+- ATT&CK is optional
+- ATT&CK uses explicit local files only
+- no heuristic CVE-to-ATT&CK mapping is performed
+- no LLM-generated ATT&CK mapping is performed
+- no live TAXII integration is used in this release
+
+## ATT&CK Data Model
+
+When CTID mode is enabled, the tool stores:
+
+- structured mapping objects per CVE
+- ATT&CK technique metadata with names, tactics, URLs, and deprecation flags
+- `attack_relevance`
+- `attack_rationale`
+- run-level `attack_summary`
+
+Compatibility projections remain available:
+
+- `attack_techniques`
+- `attack_tactics`
+- `attack_note`
+
+## ATT&CK Relevance
+
+`attack_relevance` is deterministic and separate from the main priority label:
+
+- `High`: at least one `exploitation_technique` or `primary_impact`, or tactics in the high-impact set
+- `Medium`: only `secondary_impact`, or mapped but incomplete metadata
+- `Low`: only `uncategorized`
+- `Unmapped`: no CTID mapping found
+
+High-impact tactics are:
+
+- `initial-access`
+- `execution`
+- `privilege-escalation`
+- `credential-access`
+- `lateral-movement`
+- `exfiltration`
+- `impact`
 
 ## Prioritization
+
+The primary priority score does not change in `v0.3.0`:
 
 - `Critical`: KEV or `(EPSS >= 0.70 and CVSS >= 7.0)`
 - `High`: `EPSS >= 0.40` or `CVSS >= 9.0`
 - `Medium`: `CVSS >= 7.0` or `EPSS >= 0.10`
 - `Low`: everything else
 
-These defaults are now implemented through a policy model. The CLI can override them with explicit threshold flags while preserving the default behavior when no overrides are provided.
-
-## Filtering
-
-Filters are applied only after enrichment and priority calculation.
-
-- `--priority` matches the enriched priority label
-- `--kev-only` keeps KEV-listed findings only
-- `--min-cvss` and `--min-epss` exclude findings with missing values
-- `--sort-by` changes display order, not the computed priority rank
+ATT&CK is a contextual signal. It enriches explanation, reporting, and management framing without silently changing the score.
 
 ## Comparison Mode
 
-The `compare` command evaluates the same enriched findings against a deterministic `CVSS-only` baseline:
+The `compare` command still uses:
 
-- `Critical`: `CVSS >= 9.0`
-- `High`: `CVSS >= 7.0`
-- `Medium`: `CVSS >= 4.0`
-- `Low`: missing CVSS or everything below `4.0`
+- `CVSS-only`: Critical `>= 9.0`, High `>= 7.0`, Medium `>= 4.0`, Low otherwise
+- `Enriched`: the default CVSS/EPSS/KEV model above
 
-`delta_rank` is calculated as `cvss_only_rank - enriched_rank`.
-Positive values mean the enriched model treats the CVE as more urgent than the baseline. Negative values mean the enriched model lowers the operational urgency.
+`compare` now additionally shows ATT&CK context:
+
+- mapped or unmapped state
+- `attack_relevance`
+- mapped tactic count and technique count in exports
 
 ## Explain Mode
 
-`explain` now includes the same baseline comparison logic as `compare` for a single CVE:
+`explain` is the most detailed view and includes:
 
-- CVSS-only baseline label
-- enriched label
-- delta versus the baseline
-- deterministic reason for the change or non-change
+- CVE metadata
+- CVSS score, severity, and version
+- EPSS and KEV context
+- CVSS-only baseline comparison
+- ATT&CK mappings and technique details
+- mapping types
+- tactic context
+- ATT&CK rationale and notes
 
-## Sorting
+## ATT&CK Utility Commands
 
-Results are sorted by:
+`v0.3.0` adds:
 
-1. priority rank
-2. KEV membership
-3. EPSS descending
-4. CVSS descending
-5. CVE ID
+- `attack validate`
+- `attack coverage`
+- `attack navigator-layer`
 
-With `--sort-by`, users can temporarily switch the output order to EPSS, CVSS, or CVE ID while keeping the same underlying priority calculation.
+These commands work from local ATT&CK files and do not require NVD/EPSS/KEV.
 
-## Error Handling
+## Caching
 
-- missing NVD data produces default fields instead of aborting the run
-- missing EPSS data is rendered as `N.A.`
-- KEV failures produce warnings
-- only empty or completely unusable input results in exit code `2`
+- optional file cache under `.cache/vuln-prioritizer`
+- NVD and EPSS are cached per CVE
+- the online KEV catalog is cached as an indexed dataset
+- ATT&CK local files are read directly from disk
+
+## Limitations
+
+- ATT&CK coverage depends on available CTID mappings
+- demo regeneration still depends on live upstream responses for NVD, EPSS, and KEV
+- ATT&CK context is intentionally not an asset-aware scoring engine

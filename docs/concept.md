@@ -2,36 +2,41 @@
 
 ## Goal
 
-`vuln-prioritizer` prioritizes known CVEs for operational vulnerability management. The tool is not a scanner and not a full vulnerability management platform. It is a deliberately small CLI with transparent logic.
-
-The main user-facing workflows are:
-
-- `analyze` for enriched prioritization
-- `compare` for `CVSS-only vs enriched`
-- `explain` for a single-CVE deep dive
+`vuln-prioritizer` prioritizes known CVEs for operational vulnerability management. The tool is intentionally small, CLI-first, and explicit about methodology.
 
 ## Core Security Idea
 
-- NVD provides technical metadata and CVSS.
-- FIRST EPSS provides a probability signal for near-term exploitation.
-- CISA KEV provides a strong signal for known real-world exploitation.
+The core security idea is layered prioritization:
 
-Combining these three sources creates a more useful prioritization model than CVSS alone.
+- NVD provides technical severity and metadata
+- FIRST EPSS provides a probability signal for near-term exploitation
+- CISA KEV provides a known-exploitation signal
+- CTID ATT&CK mappings provide adversary-behavior and impact context where official mappings exist
+
+That fourth layer is the differentiator in `v0.3.0`.
+
+## Main Workflows
+
+- `analyze` for prioritized triage output
+- `compare` for `CVSS-only` versus enriched reasoning
+- `explain` for a single-CVE deep dive
+- `attack coverage` for mapped versus unmapped visibility
+- `attack navigator-layer` for ATT&CK visualization output
 
 ## Target Audience
 
-- Blue teams
-- Vulnerability management teams
-- Security engineering teams
-- Management and CISO-adjacent reporting use cases
+- vulnerability management teams
+- security engineering teams
+- blue teams
+- management and CISO-adjacent reporting audiences
 
 ## Scope Boundaries
 
 Out of scope:
 
-- asset discovery
 - network scanning
+- asset discovery
 - ticket automation
 - SIEM integration
-- web UI
-- database storage
+- live ATT&CK TAXII ingestion
+- heuristic CVE-to-ATT&CK inference

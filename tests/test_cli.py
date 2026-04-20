@@ -41,6 +41,7 @@ def test_cli_analyze_end_to_end_with_mocked_providers(monkeypatch, tmp_path: Pat
     assert "# Vulnerability Prioritization Report" in report
     assert "- Findings shown: 4" in report
     assert "- NVD hits: 4/4" in report
+    assert "## ATT&CK Context Summary" in report
 
 
 def test_cli_analyze_supports_priority_threshold_filters_and_sorting(
@@ -79,6 +80,7 @@ def test_cli_analyze_supports_priority_threshold_filters_and_sorting(
     ]
     assert payload["metadata"]["filtered_out_count"] == 2
     assert payload["metadata"]["active_filters"] == ["priority=High", "min-epss>=0.400"]
+    assert payload["attack_summary"]["mapped_cves"] == 0
 
 
 def test_cli_analyze_supports_kev_only_and_min_cvss(monkeypatch, tmp_path: Path) -> None:
@@ -126,8 +128,8 @@ def test_cli_compare_table_mode(monkeypatch, tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert "CVSS-only vs Enriched Prioritization" in result.stdout
-    assert "Up 1" in result.stdout
-    assert "Down 1" in result.stdout
+    assert "Changed rows:" in result.stdout
+    assert "Unchanged rows:" in result.stdout
 
 
 def test_cli_compare_json_export(monkeypatch, tmp_path: Path) -> None:
@@ -156,6 +158,7 @@ def test_cli_compare_json_export(monkeypatch, tmp_path: Path) -> None:
     assert "comparisons" in payload
     assert payload["metadata"]["active_filters"] == ["priority=High"]
     assert any(item["changed"] for item in payload["comparisons"])
+    assert payload["attack_summary"]["mapped_cves"] == 0
 
 
 def test_cli_analyze_supports_custom_policy_thresholds(monkeypatch, tmp_path: Path) -> None:
@@ -237,6 +240,8 @@ def test_cli_explain_end_to_end_with_mocked_providers(monkeypatch, tmp_path: Pat
             "explain",
             "--cve",
             "CVE-2021-44228",
+            "--offline-attack-file",
+            str(tmp_path / "attack.csv"),
             "--output",
             str(output_file),
             "--format",
@@ -251,6 +256,7 @@ def test_cli_explain_end_to_end_with_mocked_providers(monkeypatch, tmp_path: Pat
     assert payload["finding"]["priority_label"] == "Critical"
     assert payload["comparison"]["cvss_only_label"] == "Critical"
     assert payload["attack"]["attack_note"] == "Representative demo mapping note."
+    assert payload["metadata"]["attack_source"] == "local-csv"
 
 
 def _write_input_file(tmp_path: Path) -> Path:
@@ -340,15 +346,48 @@ def _install_fake_providers(monkeypatch) -> None:  # noqa: ANN001
             [],
         )
 
-    def fake_attack_fetch_many(self, cve_ids, enabled, offline_file=None):  # noqa: ANN001
+    def fake_attack_fetch_many(  # noqa: ANN001
+        self,
+        cve_ids,
+        *,
+        enabled,
+        source="none",
+        mapping_file=None,
+        technique_metadata_file=None,
+        offline_file=None,
+    ):
         return (
             {
                 "CVE-2021-44228": AttackData(
                     cve_id="CVE-2021-44228",
+                    mapped=enabled,
+                    source="local-csv" if enabled else source,
+                    attack_relevance="Medium" if enabled else "Unmapped",
+                    attack_rationale=(
+                        "Legacy local ATT&CK CSV context is available for this CVE."
+                        if enabled
+                        else "No ATT&CK context was provided for this CVE."
+                    ),
                     attack_techniques=["T1190"],
                     attack_tactics=["Initial Access"],
                     attack_note="Representative demo mapping note.",
                 )
+            }
+            if enabled
+            else {},
+            {
+                "source": "local-csv" if enabled else "none",
+                "mapping_file": (
+                    str(mapping_file or offline_file) if (mapping_file or offline_file) else None
+                ),
+                "technique_metadata_file": (
+                    str(technique_metadata_file) if technique_metadata_file is not None else None
+                ),
+                "source_version": None,
+                "attack_version": None,
+                "domain": None,
+                "mapping_framework": None,
+                "mapping_framework_version": None,
             },
             [],
         )

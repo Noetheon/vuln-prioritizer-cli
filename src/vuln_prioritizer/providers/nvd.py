@@ -119,7 +119,7 @@ class NvdProvider:
             return NvdData(cve_id=cve_id)
 
         cve = (vulnerabilities[0] or {}).get("cve") or {}
-        score, severity = _extract_cvss(cve.get("metrics") or {})
+        score, severity, version = _extract_cvss(cve.get("metrics") or {})
 
         cwes: list[str] = []
         for weakness in cve.get("weaknesses") or []:
@@ -139,6 +139,7 @@ class NvdProvider:
             description=_pick_description(cve.get("descriptions") or []),
             cvss_base_score=score,
             cvss_severity=severity,
+            cvss_version=version,
             published=cve.get("published"),
             last_modified=cve.get("lastModified"),
             cwes=cwes,
@@ -156,7 +157,13 @@ def _pick_description(descriptions: list[dict]) -> str | None:
     return None
 
 
-def _extract_cvss(metrics: dict) -> tuple[float | None, str | None]:
+def _extract_cvss(metrics: dict) -> tuple[float | None, str | None, str | None]:
+    versions = {
+        "cvssMetricV40": "4.0",
+        "cvssMetricV31": "3.1",
+        "cvssMetricV30": "3.0",
+        "cvssMetricV2": "2.0",
+    }
     for metric_key in ("cvssMetricV40", "cvssMetricV31", "cvssMetricV30", "cvssMetricV2"):
         entries = metrics.get(metric_key) or []
         if not entries:
@@ -166,5 +173,5 @@ def _extract_cvss(metrics: dict) -> tuple[float | None, str | None]:
         score = safe_float(cvss_data.get("baseScore"))
         severity = cvss_data.get("baseSeverity") or metric.get("baseSeverity")
         if score is not None or severity:
-            return score, severity
-    return None, None
+            return score, severity, versions[metric_key]
+    return None, None, None

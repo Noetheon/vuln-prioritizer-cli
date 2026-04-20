@@ -11,6 +11,23 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
 
 - Maintained local-first validation as the primary development path while keeping release metadata and CI aligned with the codebase.
 
+## [0.3.0] - 2026-04-20
+
+### Added
+
+- CTID Mappings Explorer JSON support for local ATT&CK enrichment with pinned fixture coverage.
+- Local ATT&CK technique metadata loading with tactic, URL, and revoked/deprecated flags.
+- ATT&CK-aware `analyze`, `compare`, and `explain` outputs plus `attack validate`, `attack coverage`, and `attack navigator-layer`.
+- Checked-in ATT&CK sample inputs, example artifacts, and local demo targets for the V0.3 workflow.
+- Current-state audit and reference gap-analysis documentation for the ATT&CK extension release.
+
+### Changed
+
+- Expanded the ATT&CK data model from a flat CSV note to structured mappings, technique metadata, relevance labels, and report summaries.
+- Added CVSS version tracking so NVD output shows which CVSS family produced the selected score.
+- Kept the primary priority calculation rooted in CVSS, EPSS, and KEV while making ATT&CK a separate contextual signal.
+- Updated repository positioning, methodology, evidence guidance, and release materials around the CTID/ATT&CK differentiator.
+
 ## [0.2.2] - 2026-04-19
 
 ### Added

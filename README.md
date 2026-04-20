@@ -2,51 +2,108 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Status: active](https://img.shields.io/badge/status-active-brightgreen)](#roadmap)
+[![Status: v0.3.0](https://img.shields.io/badge/status-v0.3.0-brightgreen)](./CHANGELOG.md)
 [![Quality: local-first](https://img.shields.io/badge/quality-local--first-informational)](#development)
 
-`vuln-prioritizer` is a small Python CLI for prioritizing known vulnerabilities. It reads CVE lists, enriches them with NVD, EPSS, and CISA KEV data, and produces a transparent ranking for operational remediation decisions.
+`vuln-prioritizer` is a small Python CLI for prioritizing known CVEs. It enriches local CVE lists with NVD, FIRST EPSS, and CISA KEV data, then adds an optional ATT&CK context layer sourced from explicit local CTID Mappings Explorer artifacts.
 
 ## Why This Project Exists
 
-Vulnerability queues are usually larger than the time and staffing available to resolve them. Teams often need to decide what to patch now, what to mitigate next, and what to watch closely.
+Security teams rarely patch everything at once. They need a defensible way to decide:
 
-CVSS alone is not enough for that decision:
+- what to patch immediately
+- what to mitigate next
+- what to watch closely
+- what to explain upward to leadership
 
-- severity is not the same as exploitation likelihood
-- a widely exploited issue can matter more than a theoretically severe one
-- prioritization needs to be explainable to both engineers and decision-makers
+CVSS alone is not enough for that workflow. `vuln-prioritizer` combines:
 
-`vuln-prioritizer` exists to make that decision process smaller, clearer, and easier to defend. It turns a plain CVE list into a transparent, operationally useful ranking using public data sources.
+- CVSS from NVD for technical severity
+- EPSS for near-term exploitation likelihood
+- CISA KEV for known real-world exploitation
+- CTID/MITRE ATT&CK mappings for adversary-behavior and impact context
 
-## Project Overview
+The differentiator in `v0.3.0` is the last layer: ATT&CK-aware vulnerability context based on official CTID Mappings Explorer artifacts, not on heuristic or LLM-generated CVE-to-ATT&CK guesses.
 
-Many teams still prioritize vulnerabilities primarily by CVSS. That is useful, but often incomplete for day-to-day decision-making:
+## Project Positioning
 
-- CVSS captures technical severity, but not current exploitation likelihood.
-- EPSS provides a data-driven estimate of likely exploitation within the next 30 days.
-- KEV indicates whether a vulnerability is already known to be exploited in the wild.
+This project overlaps with general CVE prioritizers, but it is intentionally positioned as a threat-informed extension rather than a generic triage tool.
 
-This CLI combines those signals into a transparent ranking for patching, mitigation, and monitoring decisions.
+Reference point:
 
-## Motivation
+- `TURROKS/CVE_Prioritizer` combines CVSS, EPSS, CISA KEV, and VulnCheck-oriented enrichment.
 
-The project is intentionally small, readable, and demo-friendly:
+This project adds:
 
-- a working CLI as the primary artifact
-- transparent methodology
-- technical depth through API integrations, parsing, caching, and tests
-- clear security and management value through prioritized remediation guidance
+- deterministic `compare` and `explain` workflows
+- local-first evidence and demo artifacts
+- CTID-based ATT&CK context for mapped CVEs
+- ATT&CK coverage and Navigator export commands
+
+See:
+
+- [docs/reference_cve_prioritizer_gap_analysis.md](docs/reference_cve_prioritizer_gap_analysis.md)
+- [docs/evidence/current_state_audit.md](docs/evidence/current_state_audit.md)
+
+## Scope Boundaries
+
+This tool is:
+
+- a CLI for known CVEs
+- local-first and demo-friendly
+- explicit about data sources
+- designed for vulnerability management and management-facing evidence
+
+This tool is not:
+
+- a scanner
+- a SIEM integration
+- a ticketing workflow
+- a web app
+- a database-backed platform
+- a heuristic ATT&CK mapper
 
 ## Data Sources
 
 - NVD CVE API 2.0: `https://services.nvd.nist.gov/rest/json/cves/2.0`
-- NVD API 2.0 Transition Guide: `https://nvd.nist.gov/general/news/api-20-announcements`
 - FIRST EPSS API: `https://api.first.org/data/v1/epss`
 - CISA KEV Catalog: `https://www.cisa.gov/known-exploited-vulnerabilities-catalog`
-- CISA KEV Mirror: `https://github.com/cisagov/kev-data`
+- CISA KEV mirror: `https://github.com/cisagov/kev-data`
+- CTID Mappings Explorer: `https://center-for-threat-informed-defense.github.io/mappings-explorer/`
+- CTID KEV mapping page: `https://center-for-threat-informed-defense.github.io/mappings-explorer/external/kev/`
+- MITRE ATT&CK Data & Tools: `https://attack.mitre.org/resources/attack-data-and-tools/`
 
-Optional ATT&CK mapping is intentionally outside the MVP. If used, it should only come from a local mapping CSV.
+## ATT&CK Methodology
+
+ATT&CK in `v0.3.0` is:
+
+- optional
+- local-file based
+- explicit about provenance
+- separate from the main priority score
+
+ATT&CK in `v0.3.0` is not:
+
+- inferred from CVE descriptions
+- fetched from live TAXII
+- used as an undocumented weighting factor
+
+Default methodology:
+
+- `Critical`: KEV or `(EPSS >= 0.70 and CVSS >= 7.0)`
+- `High`: `EPSS >= 0.40` or `CVSS >= 9.0`
+- `Medium`: `CVSS >= 7.0` or `EPSS >= 0.10`
+- `Low`: everything else
+
+ATT&CK adds:
+
+- structured mappings
+- technique metadata
+- tactic visibility
+- `attack_relevance`
+- richer report and explain output
+
+ATT&CK does not silently override the priority class.
 
 ## Installation
 
@@ -60,7 +117,7 @@ Optional ATT&CK mapping is intentionally outside the MVP. If used, it should onl
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-pip install -e .
+pip install -e .[dev]
 ```
 
 Optionally configure an NVD API key via `.env`:
@@ -73,114 +130,104 @@ Then set `NVD_API_KEY` in `.env`.
 
 ## Development
 
-This repository currently uses **local quality gates** by design. If GitHub Actions are unavailable or intentionally disabled, you can still run the full development workflow locally:
+Local validation is the primary workflow:
 
 ```bash
 make install
 make check
 ```
 
-Additional local helpers:
+Release-oriented validation:
 
 ```bash
-make format
-make test
-make typecheck
-make package
-make package-check
 make release-check
+```
+
+Helpful local targets:
+
+```bash
 make demo-report
 make demo-compare
 make demo-explain
-make precommit-install
-```
-
-A slim GitHub Actions workflow is also included now, but the repository still treats local `make check` as the primary quality gate.
-
-For release candidates or public-release preparation, use:
-
-```bash
-make release-check
-```
-
-This runs the local quality gate, regenerates demo artifacts, builds source and wheel distributions under `dist/`, and validates the generated package metadata locally.
-
-## Highlights
-
-- focused CLI for prioritizing known CVEs
-- official/public data sources only
-- deterministic priority rules with documented rationale
-- Markdown and JSON outputs for reporting and reuse
-- optional local ATT&CK mapping without unsafe heuristics
-- local-first quality gates for environments where CI usage is limited
-
-To enable automatic local hooks with `pre-commit`:
-
-```bash
-make precommit-install
+make demo-attack-report
+make demo-attack-compare
+make demo-attack-explain
+make demo-attack-coverage
+make demo-attack-navigator
 ```
 
 ## Usage
 
-### Basic Run
+### Baseline Analyze
 
 ```bash
 vuln-prioritizer analyze --input data/sample_cves.txt
 ```
 
-### Filter the Enriched Result Set
+### ATT&CK-aware Analyze
 
 ```bash
 vuln-prioritizer analyze \
-  --input data/sample_cves.txt \
-  --priority high \
-  --min-epss 0.40 \
-  --sort-by epss
+  --input data/sample_cves_mixed.txt \
+  --output docs/example_attack_report.md \
+  --format markdown \
+  --attack-source ctid-json \
+  --attack-mapping-file data/attack/ctid_kev_enterprise_2025-07-28_attack-16.1_subset.json \
+  --attack-technique-metadata-file data/attack/attack_techniques_enterprise_16.1_subset.json
 ```
 
-### Generate a Markdown Report
-
-```bash
-vuln-prioritizer analyze \
-  --input data/sample_cves.txt \
-  --output docs/example_report.md \
-  --format markdown
-```
-
-### Explain a Single CVE
-
-```bash
-vuln-prioritizer explain --cve CVE-2021-44228
-```
-
-### Export a Single CVE Explanation as JSON
-
-```bash
-vuln-prioritizer explain \
-  --cve CVE-2021-44228 \
-  --output explain.json \
-  --format json
-```
-
-### Generate a JSON Export
-
-```bash
-vuln-prioritizer analyze \
-  --input data/sample_cves.txt \
-  --output report.json \
-  --format json
-```
-
-### Compare CVSS-only vs Enriched Prioritization
+### Compare CVSS-only vs Enriched, with ATT&CK Context
 
 ```bash
 vuln-prioritizer compare \
-  --input data/sample_cves.txt \
-  --output docs/example_compare.md \
-  --format markdown
+  --input data/sample_cves_mixed.txt \
+  --output docs/example_attack_compare.md \
+  --format markdown \
+  --attack-source ctid-json \
+  --attack-mapping-file data/attack/ctid_kev_enterprise_2025-07-28_attack-16.1_subset.json \
+  --attack-technique-metadata-file data/attack/attack_techniques_enterprise_16.1_subset.json
 ```
 
-### Use a Local ATT&CK Mapping File
+### Explain a Single Mapped CVE
+
+```bash
+vuln-prioritizer explain \
+  --cve CVE-2023-34362 \
+  --output docs/example_attack_explain.json \
+  --format json \
+  --attack-source ctid-json \
+  --attack-mapping-file data/attack/ctid_kev_enterprise_2025-07-28_attack-16.1_subset.json \
+  --attack-technique-metadata-file data/attack/attack_techniques_enterprise_16.1_subset.json
+```
+
+### Validate Local ATT&CK Inputs
+
+```bash
+vuln-prioritizer attack validate \
+  --attack-mapping-file data/attack/ctid_kev_enterprise_2025-07-28_attack-16.1_subset.json \
+  --attack-technique-metadata-file data/attack/attack_techniques_enterprise_16.1_subset.json
+```
+
+### ATT&CK Coverage Summary
+
+```bash
+vuln-prioritizer attack coverage \
+  --input data/sample_cves_mixed.txt \
+  --attack-mapping-file data/attack/ctid_kev_enterprise_2025-07-28_attack-16.1_subset.json \
+  --attack-technique-metadata-file data/attack/attack_techniques_enterprise_16.1_subset.json
+```
+
+### ATT&CK Navigator Layer Export
+
+```bash
+vuln-prioritizer attack navigator-layer \
+  --input data/sample_cves_attack.txt \
+  --attack-mapping-file data/attack/ctid_kev_enterprise_2025-07-28_attack-16.1_subset.json \
+  --attack-technique-metadata-file data/attack/attack_techniques_enterprise_16.1_subset.json \
+  --output docs/example_attack_navigator_layer.json
+```
+
+### Legacy Local CSV Mapping
 
 ```bash
 vuln-prioritizer explain \
@@ -188,157 +235,55 @@ vuln-prioritizer explain \
   --offline-attack-file data/optional_attack_to_cve.csv
 ```
 
-### Important Options
+## Important Options
 
-- `--input`: TXT or CSV file containing CVEs
-- `--output`: target file for Markdown or JSON output
-- `--format markdown|json|table`: output mode
-- `--no-attack`: explicitly disable ATT&CK context
-- `--priority critical|high|medium|low`: repeatable filter on the enriched priority label
-- `--kev-only`: keep only KEV-listed CVEs
-- `--min-cvss FLOAT`: keep only findings with CVSS greater than or equal to the threshold
-- `--min-epss FLOAT`: keep only findings with EPSS greater than or equal to the threshold
-- `--sort-by priority|epss|cvss|cve`: override display and export ordering
-- `--critical-epss-threshold FLOAT`: override the enriched `Critical` EPSS threshold
-- `--critical-cvss-threshold FLOAT`: override the enriched `Critical` CVSS threshold
-- `--high-epss-threshold FLOAT`: override the enriched `High` EPSS threshold
-- `--high-cvss-threshold FLOAT`: override the enriched `High` CVSS threshold
-- `--medium-epss-threshold FLOAT`: override the enriched `Medium` EPSS threshold
-- `--medium-cvss-threshold FLOAT`: override the enriched `Medium` CVSS threshold
-- `--max-cves N`: limit analysis to the first `N` unique CVEs
-- `--offline-kev-file PATH`: use a local KEV JSON or CSV file
-- `--offline-attack-file PATH`: use a local ATT&CK mapping CSV file
-- `--nvd-api-key-env NAME`: use a custom environment variable name for the NVD API key
-- `--no-cache`: disable the local file cache
-- `--cache-dir PATH`: set a custom cache directory
-- `--cache-ttl-hours N`: set the cache TTL in hours
+- `--attack-source none|local-csv|ctid-json`
+- `--attack-mapping-file PATH`
+- `--attack-technique-metadata-file PATH`
+- `--offline-attack-file PATH`
+- `--no-attack`
+- `--priority critical|high|medium|low`
+- `--kev-only`
+- `--min-cvss FLOAT`
+- `--min-epss FLOAT`
+- `--sort-by priority|epss|cvss|cve`
+- `--max-cves N`
 
-## Example Input
+## Included Example Inputs and Artifacts
 
-TXT:
+Inputs:
 
-```text
-CVE-2021-44228
-CVE-2022-22965
-CVE-2023-44487
-CVE-2024-3094
-```
+- [data/sample_cves.txt](data/sample_cves.txt)
+- [data/sample_cves_attack.txt](data/sample_cves_attack.txt)
+- [data/sample_cves_mixed.txt](data/sample_cves_mixed.txt)
+- [data/optional_attack_to_cve.csv](data/optional_attack_to_cve.csv)
+- [data/attack/ctid_kev_enterprise_2025-07-28_attack-16.1_subset.json](data/attack/ctid_kev_enterprise_2025-07-28_attack-16.1_subset.json)
+- [data/attack/attack_techniques_enterprise_16.1_subset.json](data/attack/attack_techniques_enterprise_16.1_subset.json)
 
-CSV:
+Artifacts:
 
-```csv
-cve
-CVE-2021-44228
-CVE-2022-22965
-CVE-2023-44487
-CVE-2024-3094
-```
+- [docs/example_report.md](docs/example_report.md)
+- [docs/example_compare.md](docs/example_compare.md)
+- [docs/example_explain.json](docs/example_explain.json)
+- [docs/example_attack_report.md](docs/example_attack_report.md)
+- [docs/example_attack_compare.md](docs/example_attack_compare.md)
+- [docs/example_attack_explain.json](docs/example_attack_explain.json)
+- [docs/example_attack_coverage.md](docs/example_attack_coverage.md)
+- [docs/example_attack_navigator_layer.json](docs/example_attack_navigator_layer.json)
 
-## Example Output
+## Documentation Map
 
-The CLI always prints a compact terminal table. A full sample report is checked in at [docs/example_report.md](docs/example_report.md).
-The comparison view is checked in at [docs/example_compare.md](docs/example_compare.md).
-For the detailed single-CVE mode, a sample export is available at [docs/example_explain.json](docs/example_explain.json).
-An optional local ATT&CK mapping template is included at [data/optional_attack_to_cve.csv](data/optional_attack_to_cve.csv).
+- [docs/methodology.md](docs/methodology.md)
+- [docs/concept.md](docs/concept.md)
+- [docs/executive_summary.md](docs/executive_summary.md)
+- [docs/evidence.md](docs/evidence.md)
+- [docs/evidence/current_state_audit.md](docs/evidence/current_state_audit.md)
+- [docs/reference_cve_prioritizer_gap_analysis.md](docs/reference_cve_prioritizer_gap_analysis.md)
+- [docs/releases/v0.3.0.md](docs/releases/v0.3.0.md)
 
-## Priority Logic
+## Limitations
 
-The MVP rules are intentionally simple and easy to explain:
-
-- `Critical`: KEV or `(EPSS >= 0.70 and CVSS >= 7.0)`
-- `High`: `EPSS >= 0.40` or `CVSS >= 9.0`
-- `Medium`: `CVSS >= 7.0` or `EPSS >= 0.10`
-- `Low`: everything else
-
-ATT&CK does not influence the priority class in the MVP. Optional ATT&CK context is only used to enrich the rationale.
-
-## Configurable Thresholds
-
-The default thresholds remain small and opinionated, but the CLI now supports policy overrides when you need a more aggressive or more conservative triage mode.
-
-Example:
-
-```bash
-vuln-prioritizer analyze \
-  --input data/sample_cves.txt \
-  --high-epss-threshold 0.30 \
-  --medium-cvss-threshold 6.5
-```
-
-Policy overrides are shown in the terminal summary and exported metadata so the resulting report stays auditable.
-
-## Comparison Baseline
-
-The `compare` command uses a deterministic `CVSS-only` baseline with standard severity bands:
-
-- `Critical`: `CVSS >= 9.0`
-- `High`: `CVSS >= 7.0`
-- `Medium`: `CVSS >= 4.0`
-- `Low`: missing CVSS or everything below `4.0`
-
-The comparison output then shows whether the enriched model makes a CVE more urgent, less urgent, or leaves it unchanged.
-
-## Tool Boundaries
-
-- not a vulnerability scanner
-- no asset discovery
-- no database
-- no web UI
-- no ticketing or SIEM integration
-- no heuristic or LLM-generated CVE-to-ATT&CK mapping
-- no live ATT&CK/TAXII integration in the MVP
-
-Missing or incomplete source data is treated as a warning, not an automatic failure. The tool attempts to produce a useful report whenever possible.
-
-## Tests
-
-```bash
-pytest
-```
-
-The test suite covers parsing, provider behavior, scoring, reporting, caching, and CLI end-to-end flows with mocked providers.
-
-## Caching
-
-By default, the tool uses a small file cache under `.cache/vuln-prioritizer`. The cache speeds up repeated demo and analysis runs for:
-
-- NVD single-CVE lookups
-- EPSS CVE data
-- the online-loaded KEV catalog
-
-The cache is optional and can be disabled with `--no-cache`.
-
-## Open Source Readiness
-
-The repository already includes the core maintainer files needed for a future public release:
-
-- [CHANGELOG.md](CHANGELOG.md)
-- [LICENSE](LICENSE)
-- [CONTRIBUTING.md](CONTRIBUTING.md)
-- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-- [SECURITY.md](SECURITY.md)
-
-The quality workflow is local-first by design. The included GitHub Actions workflow simply mirrors `make check` so local and hosted validation stay aligned.
-
-The published package metadata is also set up for a later public release, including project URLs, classifiers, and a `py.typed` marker for typed-package consumers.
-
-## Roadmap
-
-### Implemented
-
-- TXT and CSV input
-- NVD, EPSS, and KEV enrichment
-- configurable enriched priority policy thresholds
-- richer run summaries with coverage, ATT&CK hits, and filter metadata
-- post-enrichment filters and sort overrides
-- `compare` command for `CVSS-only vs enriched`
-- richer `explain` output with baseline comparison
-- optional local ATT&CK mapping workflow with a checked-in template
-- terminal, Markdown, and JSON outputs
-- slim GitHub Actions CI mirroring `make check`
-
-### Possible Future Work
-
-- named policy presets for common operating modes
-- additional cache strategies and reporting around cache hits
-- release automation beyond tagging and changelog maintenance
+- Demo regeneration still depends on live NVD/EPSS/KEV responses.
+- ATT&CK coverage exists only where CTID mappings exist.
+- The checked-in ATT&CK fixtures are curated subsets, not the full upstream datasets.
+- ATT&CK context is designed for explanation and prioritization context, not for asset-aware risk scoring.

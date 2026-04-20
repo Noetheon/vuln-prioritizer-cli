@@ -73,7 +73,8 @@ def build_rationale(
 
     if nvd.cvss_base_score is not None:
         severity = f" ({nvd.cvss_severity})" if nvd.cvss_severity else ""
-        parts.append(f"NVD reports CVSS {nvd.cvss_base_score:.1f}{severity}.")
+        version_note = f" via CVSS v{nvd.cvss_version}" if nvd.cvss_version else ""
+        parts.append(f"NVD reports CVSS {nvd.cvss_base_score:.1f}{severity}{version_note}.")
     else:
         parts.append("NVD CVSS data is unavailable or not yet analyzed.")
 
@@ -85,10 +86,18 @@ def build_rationale(
     else:
         parts.append("FIRST EPSS data is unavailable.")
 
-    if attack and attack.attack_techniques:
+    if attack and attack.mapped:
         parts.append(
-            "Optional ATT&CK context is available for: " + ", ".join(attack.attack_techniques) + "."
+            "ATT&CK context "
+            f"({attack.attack_relevance}) maps this CVE to "
+            f"{len(attack.attack_techniques)} technique(s): "
+            + ", ".join(attack.attack_techniques)
+            + "."
         )
+        if attack.mapping_types:
+            parts.append("CTID mapping types: " + ", ".join(attack.mapping_types) + ".")
+        if attack.attack_rationale:
+            parts.append(attack.attack_rationale.rstrip(".") + ".")
     if attack and attack.attack_note:
         parts.append(f"ATT&CK mapping note: {attack.attack_note.rstrip('.')}.")
 

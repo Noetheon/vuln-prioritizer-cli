@@ -7,6 +7,8 @@ import requests
 
 from vuln_prioritizer.cache import FileCache
 from vuln_prioritizer.providers.attack import AttackProvider
+from vuln_prioritizer.providers.attack_metadata import AttackMetadataProvider
+from vuln_prioritizer.providers.ctid_mappings import CtidMappingsProvider
 from vuln_prioritizer.providers.epss import EpssProvider
 from vuln_prioritizer.providers.kev import KevProvider
 from vuln_prioritizer.providers.nvd import NvdProvider
@@ -64,6 +66,7 @@ def test_nvd_parse_payload_prefers_v40_and_collects_metadata() -> None:
     assert parsed.description == "English description"
     assert parsed.cvss_base_score == 9.8
     assert parsed.cvss_severity == "CRITICAL"
+    assert parsed.cvss_version == "4.0"
     assert parsed.cwes == ["CWE-79"]
     assert parsed.references == ["https://example.com/advisory"]
 
@@ -218,14 +221,72 @@ def test_attack_provider_accepts_alias_columns_and_reports_invalid_rows(tmp_path
     )
 
     provider = AttackProvider()
-    results, warnings = provider.fetch_many(
+    results, metadata, warnings = provider.fetch_many(
         ["CVE-2021-44228"],
         enabled=True,
         offline_file=attack_file,
     )
 
+    assert metadata["source"] == "local-csv"
+    assert results["CVE-2021-44228"].mapped is True
     assert results["CVE-2021-44228"].attack_techniques == ["T1059"]
     assert results["CVE-2021-44228"].attack_tactics == ["Execution"]
     assert results["CVE-2021-44228"].attack_note == "Override row"
     assert any("invalid CVE identifier" in warning for warning in warnings)
     assert any("overrides duplicate row" in warning for warning in warnings)
+
+
+def test_ctid_provider_loads_official_subset_fixture() -> None:
+    provider = CtidMappingsProvider()
+
+    results, metadata, warnings = provider.load(
+        Path("data/attack/ctid_kev_enterprise_2025-07-28_attack-16.1_subset.json")
+    )
+
+    assert warnings == []
+    assert metadata["mapping_framework"] == "kev"
+    assert metadata["mapping_framework_version"] == "07/28/2025"
+    assert metadata["attack_version"] == "16.1"
+    assert metadata["domain"] == "enterprise"
+    assert len(results["CVE-2023-34362"]) == 7
+    assert results["CVE-2023-34362"][0].mapping_type == "exploitation_technique"
+
+
+def test_attack_metadata_provider_loads_subset_fixture() -> None:
+    provider = AttackMetadataProvider()
+
+    results, metadata, warnings = provider.load(
+        Path("data/attack/attack_techniques_enterprise_16.1_subset.json")
+    )
+
+    assert warnings == []
+    assert metadata["attack_version"] == "16.1"
+    assert metadata["domain"] == "enterprise"
+    assert results["T1059"].name == "Command and Scripting Interpreter"
+    assert results["T1059"].tactics == ["execution"]
+
+
+def test_attack_provider_ctid_json_enriches_structured_attack_data() -> None:
+    provider = AttackProvider()
+
+    results, metadata, warnings = provider.fetch_many(
+        ["CVE-2023-34362", "CVE-2024-3094"],
+        enabled=True,
+        source="ctid-json",
+        mapping_file=Path("data/attack/ctid_kev_enterprise_2025-07-28_attack-16.1_subset.json"),
+        technique_metadata_file=Path("data/attack/attack_techniques_enterprise_16.1_subset.json"),
+    )
+
+    assert warnings == []
+    assert metadata["source"] == "ctid-mappings-explorer"
+    assert metadata["attack_version"] == "16.1"
+    assert results["CVE-2023-34362"].mapped is True
+    assert results["CVE-2023-34362"].attack_relevance == "High"
+    assert results["CVE-2023-34362"].mapping_types == [
+        "exploitation_technique",
+        "primary_impact",
+        "secondary_impact",
+    ]
+    assert results["CVE-2023-34362"].techniques[0].name == "Exploit Public-Facing Application"
+    assert results["CVE-2024-3094"].mapped is False
+    assert results["CVE-2024-3094"].attack_relevance == "Unmapped"

@@ -1,10 +1,15 @@
 # Vulnerability Prioritization Report
 
 ## Run Metadata
-- Generated at: `2026-04-19T08:21:46+00:00`
+- Generated at: `2026-04-20T17:05:02+00:00`
 - Input file: `data/sample_cves.txt`
 - Output format: `markdown`
 - ATT&CK context enabled: `no`
+- ATT&CK source: `none`
+- Cache enabled: `yes`
+- Output path: `docs/example_report.md`
+- Cache directory: `.cache/vuln-prioritizer`
+- Policy overrides: `None`
 
 ## Data Sources
 - NVD CVE API 2.0
@@ -16,6 +21,7 @@
 - High: EPSS >= 0.40 or CVSS >= 9.0
 - Medium: CVSS >= 7.0 or EPSS >= 0.10
 - Low: all remaining CVEs
+- ATT&CK context was disabled for this run.
 
 ## Summary
 - Total input rows: 4
@@ -25,21 +31,28 @@
 - NVD hits: 4/4
 - EPSS hits: 4/4
 - KEV hits: 3/4
+- ATT&CK hits: 0/4
 - Critical: 4
 - High: 0
 - Medium: 0
 - Low: 0
 - Active filters: None
-- Policy overrides: None
+
+## ATT&CK Context Summary
+ATT&CK context was disabled for this export.
 
 ## Warnings
 - None
 
 ## Findings
 
-| CVE ID | Description | CVSS | Severity | EPSS | EPSS Percentile | KEV | ATT&CK Techniques | Priority | Rationale | Recommended Action |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| CVE-2022-22965 | A Spring MVC or Spring WebFlux application running on JDK 9+ may be vulnerable to remote code execution (RCE) via data binding. The specific exploit requires the application to run on Tomcat as a WAR deployment. If the application is deployed as a Spring Boot executable jar, i.e. the default, it is not vulnerable to the exploit. However, the nature of the vulnerability is more general, and there may be other ways to exploit it. | 9.8 | CRITICAL | 0.944 | 1.000 | Yes | N.A. | Critical | CISA KEV lists this CVE as known exploited in the wild. NVD reports CVSS 9.8 (CRITICAL). FIRST EPSS is 0.944 (percentile 1.000). | Patch or mitigate immediately, validate exposure, strengthen detection coverage, and escalate potential business impact. |
-| CVE-2023-44487 | The HTTP/2 protocol allows a denial of service (server resource consumption) because request cancellation can reset many streams quickly, as exploited in the wild in August through October 2023. | 7.5 | HIGH | 0.944 | 1.000 | Yes | N.A. | Critical | CISA KEV lists this CVE as known exploited in the wild. NVD reports CVSS 7.5 (HIGH). FIRST EPSS is 0.944 (percentile 1.000). | Patch or mitigate immediately, validate exposure, strengthen detection coverage, and escalate potential business impact. |
-| CVE-2021-44228 | Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases 2.12.2, 2.12.3, and 2.3.1) JNDI features used in configuration, log messages, and parameters do not protect against attacker controlled LDAP and other JNDI related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled. From log4j 2.15.0, this behavior has been disabled by default. From version 2.16.0 (along with 2.12.2, 2.12.3, and 2.3.1), this functionality has been completely removed. Note that this vulnerability is specific to log4j-core and does not affect log4net, log4cxx, or other Apache Logging Services projects. | 10.0 | CRITICAL | 0.944 | 1.000 | Yes | N.A. | Critical | CISA KEV lists this CVE as known exploited in the wild. NVD reports CVSS 10.0 (CRITICAL). FIRST EPSS is 0.944 (percentile 1.000). | Patch or mitigate immediately, validate exposure, strengthen detection coverage, and escalate potential business impact. |
-| CVE-2024-3094 | Malicious code was discovered in the upstream tarballs of xz, starting with version 5.6.0. Through a series of complex obfuscations, the liblzma build process extracts a prebuilt object file from a disguised test file existing in the source code, which is then used to modify specific functions in the liblzma code. This results in a modified liblzma library that can be used by any software linked against this library, intercepting and modifying the data interaction with this library. | 10.0 | CRITICAL | 0.850 | 0.994 | No | N.A. | Critical | NVD reports CVSS 10.0 (CRITICAL). FIRST EPSS is 0.850 (percentile 0.994). | Patch or mitigate immediately, validate exposure, strengthen detection coverage, and escalate potential business impact. |
+| CVE ID | Description | CVSS | Severity | CVSS Version | EPSS | EPSS Percentile | KEV | ATT&CK | Attack Relevance | Priority | Rationale | Recommended Action |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CVE-2022-22965 | A Spring MVC or Spring WebFlux application running on JDK 9+ may be vulnerable to remote code execution (RCE) via data binding. The specific exploit requires the application to run on Tomcat as a WAR deployment. If the application is deployed as a Spring Boot executable jar, i.e. the default, it is not vulnerable to the exploit. However, the nature of the vulnerability is more general, and there may be other ways to exploit it. | 9.8 | CRITICAL | 3.1 | 0.944 | 1.000 | Yes | Unmapped | Unmapped | Critical | CISA KEV lists this CVE as known exploited in the wild. NVD reports CVSS 9.8 (CRITICAL) via CVSS v3.1. FIRST EPSS is 0.944 (percentile 1.000). | Patch or mitigate immediately, validate exposure, strengthen detection coverage, and escalate potential business impact. |
+| CVE-2023-44487 | The HTTP/2 protocol allows a denial of service (server resource consumption) because request cancellation can reset many streams quickly, as exploited in the wild in August through October 2023. | 7.5 | HIGH | 3.1 | 0.944 | 1.000 | Yes | Unmapped | Unmapped | Critical | CISA KEV lists this CVE as known exploited in the wild. NVD reports CVSS 7.5 (HIGH) via CVSS v3.1. FIRST EPSS is 0.944 (percentile 1.000). | Patch or mitigate immediately, validate exposure, strengthen detection coverage, and escalate potential business impact. |
+| CVE-2021-44228 | Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases 2.12.2, 2.12.3, and 2.3.1) JNDI features used in configuration, log messages, and parameters do not protect against attacker controlled LDAP and other JNDI related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled. From log4j 2.15.0, this behavior has been disabled by default. From version 2.16.0 (along with 2.12.2, 2.12.3, and 2.3.1), this functionality has been completely removed. Note that this vulnerability is specific to log4j-core and does not affect log4net, log4cxx, or other Apache Logging Services projects. | 10.0 | CRITICAL | 3.1 | 0.944 | 1.000 | Yes | Unmapped | Unmapped | Critical | CISA KEV lists this CVE as known exploited in the wild. NVD reports CVSS 10.0 (CRITICAL) via CVSS v3.1. FIRST EPSS is 0.944 (percentile 1.000). | Patch or mitigate immediately, validate exposure, strengthen detection coverage, and escalate potential business impact. |
+| CVE-2024-3094 | Malicious code was discovered in the upstream tarballs of xz, starting with version 5.6.0. Through a series of complex obfuscations, the liblzma build process extracts a prebuilt object file from a disguised test file existing in the source code, which is then used to modify specific functions in the liblzma code. This results in a modified liblzma library that can be used by any software linked against this library, intercepting and modifying the data interaction with this library. | 10.0 | CRITICAL | 3.1 | 0.843 | 0.993 | No | Unmapped | Unmapped | Critical | NVD reports CVSS 10.0 (CRITICAL) via CVSS v3.1. FIRST EPSS is 0.843 (percentile 0.993). | Patch or mitigate immediately, validate exposure, strengthen detection coverage, and escalate potential business impact. |
+
+## ATT&CK-mapped CVEs
+
+No mapped CVEs were included in this export.

@@ -2,27 +2,31 @@
 
 ## Problem
 
-Security teams often need to assess more known vulnerabilities than they can remediate immediately. A CVSS-only prioritization model does not fully reflect operational urgency.
+Security teams usually face more known vulnerabilities than they can remediate immediately. A CVSS-only ranking is too limited for operational decision-making.
 
 ## Approach
 
-`vuln-prioritizer` combines:
+`vuln-prioritizer` combines four signals:
 
 - technical severity from NVD/CVSS
-- likely exploitation from FIRST EPSS
-- observed real-world exploitation from CISA KEV
+- exploitation probability from FIRST EPSS
+- known real-world exploitation from CISA KEV
+- adversary-behavior and impact context from CTID/MITRE ATT&CK mappings
 
 ## Benefit
 
 - better remediation sequencing for patching and mitigation
-- transparent, documented prioritization rules
-- a clear bridge between technical findings and management-facing communication
+- clearer escalation material for management and CISO audiences
+- visible separation between mapped and unmapped risk context
+- deterministic, evidence-based outputs suitable for demos and coursework
 
 ## Output
 
-The tool provides:
+The tool now provides:
 
-- a prioritized terminal table for operational use
-- a comparison view to show how enriched prioritization differs from CVSS-only triage
-- a Markdown report for documentation and reporting
-- optional JSON output for future integrations or downstream processing
+- prioritized terminal output
+- Markdown and JSON reports
+- `CVSS-only` vs enriched comparison output
+- mapped-CVE ATT&CK context in `explain`
+- ATT&CK coverage summaries
+- ATT&CK Navigator layer export

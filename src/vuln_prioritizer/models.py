@@ -20,6 +20,7 @@ class NvdData(StrictModel):
     description: str | None = None
     cvss_base_score: float | None = None
     cvss_severity: str | None = None
+    cvss_version: str | None = None
     published: str | None = None
     last_modified: str | None = None
     cwes: list[str] = Field(default_factory=list)
@@ -43,8 +44,47 @@ class KevData(StrictModel):
     due_date: str | None = None
 
 
+class AttackMapping(StrictModel):
+    capability_id: str
+    attack_object_id: str
+    attack_object_name: str | None = None
+    mapping_type: str | None = None
+    capability_group: str | None = None
+    capability_description: str | None = None
+    comments: str | None = None
+    references: list[str] = Field(default_factory=list)
+
+
+class AttackTechnique(StrictModel):
+    attack_object_id: str
+    name: str
+    tactics: list[str] = Field(default_factory=list)
+    url: str | None = None
+    revoked: bool = False
+    deprecated: bool = False
+
+
+class AttackSummary(StrictModel):
+    mapped_cves: int = 0
+    unmapped_cves: int = 0
+    mapping_type_distribution: dict[str, int] = Field(default_factory=dict)
+    technique_distribution: dict[str, int] = Field(default_factory=dict)
+    tactic_distribution: dict[str, int] = Field(default_factory=dict)
+
+
 class AttackData(StrictModel):
     cve_id: str
+    mapped: bool = False
+    source: str = "none"
+    source_version: str | None = None
+    attack_version: str | None = None
+    domain: str | None = None
+    mappings: list[AttackMapping] = Field(default_factory=list)
+    techniques: list[AttackTechnique] = Field(default_factory=list)
+    mapping_types: list[str] = Field(default_factory=list)
+    capability_groups: list[str] = Field(default_factory=list)
+    attack_relevance: str = "Unmapped"
+    attack_rationale: str | None = None
     attack_techniques: list[str] = Field(default_factory=list)
     attack_tactics: list[str] = Field(default_factory=list)
     attack_note: str | None = None
@@ -142,12 +182,18 @@ class PrioritizedFinding(StrictModel):
     description: str | None = None
     cvss_base_score: float | None = None
     cvss_severity: str | None = None
+    cvss_version: str | None = None
     epss: float | None = None
     epss_percentile: float | None = None
     in_kev: bool = False
+    attack_mapped: bool = False
+    attack_relevance: str = "Unmapped"
+    attack_rationale: str | None = None
     attack_techniques: list[str] = Field(default_factory=list)
     attack_tactics: list[str] = Field(default_factory=list)
     attack_note: str | None = None
+    attack_mappings: list[AttackMapping] = Field(default_factory=list)
+    attack_technique_details: list[AttackTechnique] = Field(default_factory=list)
     priority_label: str
     priority_rank: int
     rationale: str
@@ -159,6 +205,7 @@ class ComparisonFinding(StrictModel):
     description: str | None = None
     cvss_base_score: float | None = None
     cvss_severity: str | None = None
+    cvss_version: str | None = None
     epss: float | None = None
     epss_percentile: float | None = None
     in_kev: bool = False
@@ -166,6 +213,10 @@ class ComparisonFinding(StrictModel):
     cvss_only_rank: int
     enriched_label: str
     enriched_rank: int
+    attack_mapped: bool = False
+    attack_relevance: str = "Unmapped"
+    mapped_technique_count: int = 0
+    mapped_tactics: list[str] = Field(default_factory=list)
     changed: bool
     delta_rank: int
     change_reason: str
@@ -176,6 +227,14 @@ class EnrichmentResult(BaseModel):
     epss: dict[str, EpssData] = Field(default_factory=dict)
     kev: dict[str, KevData] = Field(default_factory=dict)
     attack: dict[str, AttackData] = Field(default_factory=dict)
+    attack_source: str = "none"
+    attack_mapping_file: str | None = None
+    attack_technique_metadata_file: str | None = None
+    attack_source_version: str | None = None
+    attack_version: str | None = None
+    attack_domain: str | None = None
+    mapping_framework: str | None = None
+    mapping_framework_version: str | None = None
     warnings: list[str] = Field(default_factory=list)
 
 
@@ -185,7 +244,14 @@ class AnalysisContext(BaseModel):
     output_format: str
     generated_at: str
     attack_enabled: bool = False
+    attack_source: str = "none"
     attack_mapping_file: str | None = None
+    attack_technique_metadata_file: str | None = None
+    attack_source_version: str | None = None
+    attack_version: str | None = None
+    attack_domain: str | None = None
+    mapping_framework: str | None = None
+    mapping_framework_version: str | None = None
     warnings: list[str] = Field(default_factory=list)
     total_input: int = 0
     valid_input: int = 0
@@ -195,6 +261,7 @@ class AnalysisContext(BaseModel):
     epss_hits: int = 0
     kev_hits: int = 0
     attack_hits: int = 0
+    attack_summary: AttackSummary = Field(default_factory=AttackSummary)
     active_filters: list[str] = Field(default_factory=list)
     policy_overrides: list[str] = Field(default_factory=list)
     priority_policy: PriorityPolicy = Field(default_factory=PriorityPolicy)

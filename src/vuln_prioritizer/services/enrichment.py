@@ -47,15 +47,21 @@ class EnrichmentService:
         cve_ids: list[str],
         *,
         attack_enabled: bool,
+        attack_source: str = "none",
         offline_kev_file: Path | None = None,
+        attack_mapping_file: Path | None = None,
+        attack_technique_metadata_file: Path | None = None,
         offline_attack_file: Path | None = None,
     ) -> EnrichmentResult:
         nvd_results, nvd_warnings = self.nvd.fetch_many(cve_ids)
         epss_results, epss_warnings = self.epss.fetch_many(cve_ids)
         kev_results, kev_warnings = self.kev.fetch_many(cve_ids, offline_file=offline_kev_file)
-        attack_results, attack_warnings = self.attack.fetch_many(
+        attack_results, attack_metadata, attack_warnings = self.attack.fetch_many(
             cve_ids,
             enabled=attack_enabled,
+            source=attack_source,
+            mapping_file=attack_mapping_file,
+            technique_metadata_file=attack_technique_metadata_file,
             offline_file=offline_attack_file,
         )
 
@@ -64,5 +70,13 @@ class EnrichmentService:
             epss=epss_results,
             kev=kev_results,
             attack=attack_results,
+            attack_source=attack_metadata["source"] or "none",
+            attack_mapping_file=attack_metadata["mapping_file"],
+            attack_technique_metadata_file=attack_metadata["technique_metadata_file"],
+            attack_source_version=attack_metadata["source_version"],
+            attack_version=attack_metadata["attack_version"],
+            attack_domain=attack_metadata["domain"],
+            mapping_framework=attack_metadata["mapping_framework"],
+            mapping_framework_version=attack_metadata["mapping_framework_version"],
             warnings=nvd_warnings + epss_warnings + kev_warnings + attack_warnings,
         )
