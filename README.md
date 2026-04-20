@@ -390,9 +390,9 @@ Artifacts:
 - [docs/example_attack_explain.json](docs/example_attack_explain.json)
 - [docs/example_attack_coverage.md](docs/example_attack_coverage.md)
 - [docs/example_attack_navigator_layer.json](docs/example_attack_navigator_layer.json)
-- [docs/examples/future_pr_comment.md](docs/examples/future_pr_comment.md)
-- [docs/examples/future_results.sarif](docs/examples/future_results.sarif)
-- [docs/examples/future_report.html](docs/examples/future_report.html)
+- [docs/examples/example_pr_comment.md](docs/examples/example_pr_comment.md)
+- [docs/examples/example_results.sarif](docs/examples/example_results.sarif)
+- [docs/examples/example_report.html](docs/examples/example_report.html)
 
 ## Documentation Map
 
@@ -407,7 +407,7 @@ Artifacts:
 - [docs/executive_summary.md](docs/executive_summary.md)
 - [docs/evidence.md](docs/evidence.md)
 - [docs/evidence/current_state_audit.md](docs/evidence/current_state_audit.md)
-- [docs/integrations/future_reporting_and_ci.md](docs/integrations/future_reporting_and_ci.md)
+- [docs/integrations/reporting_and_ci.md](docs/integrations/reporting_and_ci.md)
 - [docs/reference_cve_prioritizer_gap_analysis.md](docs/reference_cve_prioritizer_gap_analysis.md)
 - [docs/roadmap.md](docs/roadmap.md)
 - [docs/releases/v1.0.0.md](docs/releases/v1.0.0.md)

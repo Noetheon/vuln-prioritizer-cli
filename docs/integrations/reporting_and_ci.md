@@ -99,9 +99,9 @@ Consumer workflow examples:
 
 Example output artifacts:
 
-- [docs/examples/future_pr_comment.md](../examples/future_pr_comment.md)
-- [docs/examples/future_results.sarif](../examples/future_results.sarif)
-- [docs/examples/future_report.html](../examples/future_report.html)
+- [docs/examples/example_pr_comment.md](../examples/example_pr_comment.md)
+- [docs/examples/example_results.sarif](../examples/example_results.sarif)
+- [docs/examples/example_report.html](../examples/example_report.html)
 
 ## Guardrails
 
